@@ -1,0 +1,15 @@
+{
+  "name": "wirelogd",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "extensions": [
+    "ms-python.python"
+  ],
+  "settings": {
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true
+  },
+  "vim-extensions": [],
+  "vim-settings": []
+}
