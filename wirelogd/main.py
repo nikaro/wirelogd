@@ -5,6 +5,7 @@
 import argparse
 import configparser
 import json
+import logging
 import os
 import pathlib
 import subprocess
@@ -12,7 +13,7 @@ import sys
 import time
 
 
-def getboolean(value: str) -> bool:
+def booly(value: str) -> bool:
     """Return a boolean from values like 'yes', 'no', etc."""
 
     truthy_values = (
@@ -27,6 +28,12 @@ def getboolean(value: str) -> bool:
     return str(value).lower() in truthy_values
 
 
+def config_from_defaults(struct: tuple) -> dict:
+    """Return dict from defaults."""
+
+    return {x: y for x, _, y in struct}
+
+
 def config_from_file(struct: tuple, config_path: str) -> dict:
     """Return dict from configparser."""
 
@@ -37,7 +44,7 @@ def config_from_file(struct: tuple, config_path: str) -> dict:
 
     return {
         x: y(configfile.get("wirelogd", x))
-        for x, y in struct
+        for x, y, _ in struct
         if configfile.get("wirelogd", x, fallback=None)
     }
 
@@ -47,7 +54,7 @@ def config_from_environment(struct: tuple) -> dict:
 
     return {
         x: y(os.environ["WIRELOGD_" + x.upper()])
-        for x, y in struct
+        for x, y, _ in struct
         if os.getenv("WIRELOGD_" + x.upper().replace("-", "_"))
     }
 
@@ -57,7 +64,7 @@ def config_from_args(struct: tuple, args: argparse.Namespace) -> dict:
 
     return {
         x: y(getattr(args, x))
-        for x, y in struct
+        for x, y, _ in struct
         if getattr(args, x.replace("-", "_"))
     }
 
@@ -67,20 +74,17 @@ def parse_config(config_path: str, args: argparse.Namespace) -> dict:
 
     config: dict = {}
     config_struct = (
-        # settings, type to cast
-        ("refresh", int),
-        ("sudo", getboolean),
-        ("timeout", int),
-        ("wg-gen-web", getboolean),
+        # settings, type to cast, default
+        ("debug", booly, False),
+        ("refresh", int, 5),
+        ("sudo", booly, False),
+        ("timeout", int, 300),
+        ("wg-gen-web", booly, False),
     )
 
     # set defaults
-    config.update({
-        "refresh": 5,
-        "sudo": False,
-        "timeout": 300,
-        "wg-gen-web": False,
-    })
+    config_defaults = config_from_defaults(config_struct)
+    config.update(config_defaults)
 
     # set from configuration file
     config_file = config_from_file(config_struct, config_path)
@@ -107,7 +111,7 @@ def link_wggw(pubkey: str) -> str:
         if data["publicKey"] == pubkey:
             return data["name"]
 
-    return ""
+    return "unknown"
 
 
 def peer_dict(peer: list, wggw: bool) -> dict:
@@ -119,6 +123,7 @@ def peer_dict(peer: list, wggw: bool) -> dict:
         "endpoint": peer[3],
         "allowed-ips": peer[4],
         "latest-handshake": float(peer[5]),
+        "name": "unknown",
     }
 
     if wggw:
@@ -127,7 +132,7 @@ def peer_dict(peer: list, wggw: bool) -> dict:
     return fpeer
 
 
-def get_peers(sudo: bool, wggw: bool) -> list:
+def get_peers(sudo: bool, wggw: bool, log: logging.Logger) -> list:
     """Return list of peers, each peer as dict of informations."""
 
     # run command
@@ -135,19 +140,24 @@ def get_peers(sudo: bool, wggw: bool) -> list:
     if sudo:
         cmd.insert(0, "sudo")
     try:
-        res = subprocess.run(cmd, capture_output=True, check=True, text=True)
-    except Exception:
-        sys.exit("error while executing: '{}'".format(" ".join(cmd)))
+        res = subprocess.run(cmd, capture_output=True, check=True)
+        log.debug("peers stdout: %s", res.stdout)
+    except subprocess.CalledProcessError as err:
+        log.debug("%s", err.stderr)
+        sys.exit("executing '%s' failed" % " ".join(cmd))
+    except FileNotFoundError as err:
+        log.debug("%s", err)
+        sys.exit("wireguard-tools are not installed")
 
     # filter and format peers (client peers have 9 columns)
     peers_list = [
         x.split()
-        for x in res.stdout.strip().split("\n")
-        if x.split() == 9
+        for x in res.stdout.decode().strip().split("\n")
+        if len(x.split()) == 9
     ]
     peers = [peer_dict(x, wggw) for x in peers_list]
 
-    return list(peers)
+    return peers
 
 
 def check_timeout(peer: dict, timeout: int) -> bool:
@@ -160,40 +170,62 @@ def check_timeout(peer: dict, timeout: int) -> bool:
     return expired
 
 
-def run_loop(config):
+def run_loop(config: dict, log: logging.Logger):
     """Run loop executing actions and logging results."""
 
     # intialize activity state tracking
     activity_state: dict = {}
 
     while True:
-        peers = get_peers(config["sudo"], config["wg-gen-web"])
+        peers = get_peers(config["sudo"], config["wg-gen-web"], log)
+        log.debug("%s", peers)
         for peer in peers:
             was_active = activity_state.get(peer["public-key"], False)
             timedout = check_timeout(peer, config["timeout"])
             if was_active and timedout:
                 # log inactive connection
                 activity_state[peer["public-key"]] = False
-                print(peer["public-key"] + " inactive")
+                log.info(
+                    "%s - %s - %s - %s - %s - inactive",
+                    peer["name"],
+                    peer["public-key"],
+                    peer["endpoint"],
+                    peer["allowed-ips"],
+                    peer["interface"],
+                )
             elif not was_active and not timedout:
                 # log new active connection
                 activity_state[peer["public-key"]] = True
-                print(peer["public-key"] + " active from " + peer["endpoint"])
-        time.sleep(config.refresh)
+                log.info(
+                    "%s - %s - %s - %s - %s - active",
+                    peer["name"],
+                    peer["public-key"],
+                    peer["endpoint"],
+                    peer["allowed-ips"],
+                    peer["interface"],
+                )
+        time.sleep(config["refresh"])
 
 
 def main():
     """Main function."""
 
-    parser = argparse.ArgumentParser(description="Wireguard logging.")
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--config", "-c",
-        help="path to configuration file [/etc/wireguard/wirelogd.ini]",
+        help="path to configuration file",
+        metavar="str",
+    )
+    parser.add_argument(
+        "--debug", "-d",
+        help="enable debug logging",
+        action="store_true",
     )
     parser.add_argument(
         "--refresh", "-r",
-        help="refresh interval in seconds [5]",
+        help="refresh interval in seconds",
         type=int,
+        metavar="int",
     )
     parser.add_argument(
         "--sudo", "-s",
@@ -202,24 +234,39 @@ def main():
     )
     parser.add_argument(
         "--timeout", "-t",
-        help="wireguard handshake timeout in seconds [300]",
+        help="wireguard handshake timeout in seconds",
         type=int,
+        metavar="int",
     )
     parser.add_argument(
         "--wg-gen-web", "-w",
-        help="link peer with its wg-gen-web config",
+        help="link peer with its wg-gen-web config name",
         action="store_true",
     )
     args = parser.parse_args()
 
-    config_path = (
-        args.config
-        or os.getenv("WIRELOGD_CONFIG")
-        or "/etc/wireguard/wirelogd.ini"
-    )
+    config_path = args.config or os.getenv("WIRELOGD_CONFIG")
+    if config_path and not pathlib.Path(config_path).exists():
+        sys.exit(f"error: {config_path} not found")
+    elif not config_path:
+        config_path = "/etc/wirelogd.cfg"
     config = parse_config(config_path, args)
 
-    run_loop(config)
+    log = logging.getLogger('wirelogd')
+    log.setLevel(logging.DEBUG)
+    log_stream = logging.StreamHandler()
+    log_stream.setFormatter(logging.Formatter("%(levelname)s - %(message)s"))
+    if config["debug"]:
+        log_stream.setLevel(logging.DEBUG)
+    else:
+        log_stream.setLevel(logging.INFO)
+    log.addHandler(log_stream)
+
+    log.info("starting wirelodg")
+    try:
+        run_loop(config, log)
+    except KeyboardInterrupt:
+        sys.exit(0)
 
 
 if __name__ == '__main__':

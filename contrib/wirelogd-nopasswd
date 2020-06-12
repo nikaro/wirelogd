@@ -1,0 +1,1 @@
+wirelogd ALL=NOPASSWD: /usr/bin/wg

@@ -1,0 +1,13 @@
+[Unit]
+Description=WireGuard Logging
+After=network.target
+
+[Service]
+Type=simple
+User=wirelogd
+Group=root
+ExecStart=/usr/local/bin/wirelogd
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
