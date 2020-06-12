@@ -43,6 +43,7 @@ optional arguments:
 # cp contrib/wirelogd.cfg /etc/
 # cp contrib/wirelogd-nopasswd /etc/sudoers.d/
 # cp contrib/wirelogd.service /etc/systemd/system/
+# chmod g+rx /etc/wireguard
 # systemctl daemon-reload
 # systemctl enable --now wirelogd.service
 ```
