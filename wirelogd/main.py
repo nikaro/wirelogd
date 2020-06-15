@@ -8,7 +8,7 @@ import json
 import logging
 import os
 import pathlib
-import subprocess
+import subprocess  # nosec
 import sys
 import time
 
@@ -53,7 +53,7 @@ def config_from_environment(struct: tuple) -> dict:
     """Return dict from environment."""
 
     return {
-        x: y(os.environ["WIRELOGD_" + x.upper()])
+        x: y(os.environ["WIRELOGD_" + x.upper().replace("-", "_")])
         for x, y, _ in struct
         if os.getenv("WIRELOGD_" + x.upper().replace("-", "_"))
     }
@@ -63,58 +63,50 @@ def config_from_args(struct: tuple, args: argparse.Namespace) -> dict:
     """Return dict from args."""
 
     return {
-        x: y(getattr(args, x))
+        x: y(getattr(args, x.replace("-", "_")))
         for x, y, _ in struct
-        if getattr(args, x.replace("-", "_"))
+        if hasattr(args, x.replace("-", "_"))
     }
 
 
-def parse_config(config_path: str, args: argparse.Namespace) -> dict:
+def parse_config(struct: tuple, path: str, args: argparse.Namespace) -> dict:
     """Return config from: args > environment > configfile > defaults."""
 
     config: dict = {}
-    config_struct = (
-        # settings, type to cast, default
-        ("debug", booly, False),
-        ("refresh", int, 5),
-        ("sudo", booly, False),
-        ("timeout", int, 300),
-        ("wg-gen-web", booly, False),
-    )
 
     # set defaults
-    config_defaults = config_from_defaults(config_struct)
+    config_defaults = config_from_defaults(struct)
     config.update(config_defaults)
 
     # set from configuration file
-    config_file = config_from_file(config_struct, config_path)
+    config_file = config_from_file(struct, path)
     config.update(config_file)
 
     # set from environment variables
-    config_env = config_from_environment(config_struct)
+    config_env = config_from_environment(struct)
     config.update(config_env)
 
     # set from command-line arugments
-    config_args = config_from_args(config_struct, args)
+    config_args = config_from_args(struct, args)
     config.update(config_args)
 
     return config
 
 
-def link_wggw(pubkey: str) -> str:
+def link_wggw(path: str, pubkey: str) -> str:
     """Return name from wg-gen-web config matching with public key."""
 
-    files = pathlib.Path("/etc/wireguard/").glob("*-*-*-*-*")
-    for wggw_conf_path in files:
-        with open(wggw_conf_path) as wggw_conf:
-            data = json.load(wggw_conf)
-        if data["publicKey"] == pubkey:
-            return data["name"]
+    files = pathlib.Path(path).glob("*-*-*-*-*")
+    for conf_path in files:
+        with open(conf_path) as conf_fp:
+            conf = json.load(conf_fp)
+        if conf["publicKey"] == pubkey:
+            return conf["name"]
 
     return "unknown"
 
 
-def peer_dict(peer: list, wggw: bool) -> dict:
+def peer_dict(peer: list, wggw: bool, wggw_path: str) -> dict:
     """Return structured dict from wg peer dump line."""
 
     fpeer = {
@@ -126,13 +118,13 @@ def peer_dict(peer: list, wggw: bool) -> dict:
         "name": "unknown",
     }
 
-    if wggw:
-        fpeer["name"] = link_wggw(fpeer["public-key"])
+    if wggw and wggw_path:
+        fpeer["name"] = link_wggw(wggw_path, fpeer["public-key"])
 
     return fpeer
 
 
-def get_peers(sudo: bool, wggw: bool, log: logging.Logger) -> list:
+def get_peers(sudo: bool, wggw: bool, wggw_path: str) -> list:
     """Return list of peers, each peer as dict of informations."""
 
     # run command
@@ -140,13 +132,10 @@ def get_peers(sudo: bool, wggw: bool, log: logging.Logger) -> list:
     if sudo:
         cmd.insert(0, "sudo")
     try:
-        res = subprocess.run(cmd, capture_output=True, check=True)
-        log.debug("peers stdout: %s", res.stdout)
-    except subprocess.CalledProcessError as err:
-        log.debug("%s", err.stderr)
+        res = subprocess.run(cmd, capture_output=True, check=True)  # nosec
+    except subprocess.CalledProcessError:
         sys.exit("executing '%s' failed" % " ".join(cmd))
-    except FileNotFoundError as err:
-        log.debug("%s", err)
+    except FileNotFoundError:
         sys.exit("wireguard-tools are not installed")
 
     # filter and format peers (client peers have 9 columns)
@@ -155,7 +144,7 @@ def get_peers(sudo: bool, wggw: bool, log: logging.Logger) -> list:
         for x in res.stdout.decode().strip().split("\n")
         if len(x.split()) == 9
     ]
-    peers = [peer_dict(x, wggw) for x in peers_list]
+    peers = [peer_dict(x, wggw, wggw_path) for x in peers_list]
 
     return peers
 
@@ -177,7 +166,11 @@ def run_loop(config: dict, log: logging.Logger):
     activity_state: dict = {}
 
     while True:
-        peers = get_peers(config["sudo"], config["wg-gen-web"], log)
+        peers = get_peers(
+            config["sudo"],
+            config["wg-gen-web"],
+            config["wg-gen-web-path"],
+        )
         log.debug("%s", peers)
         for peer in peers:
             was_active = activity_state.get(peer["public-key"], False)
@@ -243,14 +236,29 @@ def main():
         help="link peer with its wg-gen-web config name",
         action="store_true",
     )
+    parser.add_argument(
+        "--wg-gen-web-path",
+        help="path where wg-gen-web store its config files",
+        metavar="str",
+    )
     args = parser.parse_args()
+
+    config_struct = (
+        # settings, type to cast, default
+        ("debug", booly, False),
+        ("refresh", int, 5),
+        ("sudo", booly, False),
+        ("timeout", int, 300),
+        ("wg-gen-web", booly, False),
+        ("wg-gen-web-path", str, "/etc/wireguard/"),
+    )
 
     config_path = args.config or os.getenv("WIRELOGD_CONFIG")
     if config_path and not pathlib.Path(config_path).exists():
         sys.exit(f"error: {config_path} not found")
     elif not config_path:
         config_path = "/etc/wirelogd.cfg"
-    config = parse_config(config_path, args)
+    config = parse_config(config_struct, config_path, args)
 
     log = logging.getLogger('wirelogd')
     log.setLevel(logging.DEBUG)

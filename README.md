@@ -17,7 +17,7 @@ juin 12 15:26:38 hostname wirelogd[15233]: INFO - unknown - NRCIeq4a/vChupjDlomd
 ```
 # wirelogd -h
 usage: wirelogd [-h] [--config PATH] [--debug] [--refresh SEC] [--sudo]
-                [--timeout SEC] [--wg-gen-web]
+                [--timeout SEC] [--wg-gen-web] [--wg-gen-web-path]
 
 WireGuard logging.
 
@@ -31,6 +31,7 @@ optional arguments:
   --timeout int, -t int
                         wireguard handshake timeout in seconds
   --wg-gen-web, -w      link peer with its wg-gen-web config name
+  --wg-gen-web-path     path where wg-gen-web store its config files
 ```
 
 ## Installation
@@ -61,6 +62,7 @@ refresh = 5
 sudo = no
 timeout = 300
 wg-gen-web = no
+wg-gen-web-path = /etc/wireguard/
 ```
 
 Here are the environment variables available:
@@ -71,6 +73,7 @@ Here are the environment variables available:
 - `WIRELOGD_SUDO`
 - `WIRELOGD_TIMEOUT`
 - `WIRELOGD_WG_GEN_WEB`
+- `WIRELOGD_WG_GEN_WEB_PATH`
 
 Configuration precedence is, by lowest (most easily overridden) to highest (overrides all others):
 
