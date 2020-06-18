@@ -1,6 +1,14 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 
-"""WireGuard logging."""
+"""
+Wirelogd is a logging daemon for WireGuard. Since WireGuard itself does not log
+the state of its peers (and since it is UDP based so, there no concept of
+"connection state"), Wirelogd relies on the latest handshake to determine if a
+peer is active or inactive. While there is trafic the handshake should be
+renewed every 2 minutes. If there is no trafic, handshake is not renewed. Based
+on this behavior we assume that if there is no new handshake after a while
+(default Wirelogd timeout value is 5 minutes), the client is probably inactive.
+"""
 
 import argparse
 import configparser
@@ -65,7 +73,10 @@ def config_from_args(struct: tuple, args: argparse.Namespace) -> dict:
     return {
         x: y(getattr(args, x.replace("-", "_")))
         for x, y, _ in struct
-        if hasattr(args, x.replace("-", "_"))
+        if (
+            hasattr(args, x.replace("-", "_"))
+            and getattr(args, x.replace("-", "_"))
+        )
     }
 
 
@@ -166,6 +177,7 @@ def run_loop(config: dict, log: logging.Logger):
     activity_state: dict = {}
 
     while True:
+        log.info("starting wirelodg")
         peers = get_peers(
             config["sudo"],
             config["wg-gen-web"],
@@ -200,10 +212,10 @@ def run_loop(config: dict, log: logging.Logger):
         time.sleep(config["refresh"])
 
 
-def main():
-    """Main function."""
+def setup_parser() -> argparse.ArgumentParser:
+    """Set the main arguments."""
 
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(prog="wirelogd", description=__doc__)
     parser.add_argument(
         "--config", "-c",
         help="path to configuration file",
@@ -241,7 +253,12 @@ def main():
         help="path where wg-gen-web store its config files",
         metavar="str",
     )
-    args = parser.parse_args()
+
+    return parser
+
+
+def setup_config(args: argparse.Namespace) -> dict:
+    """Set the main configuration."""
 
     config_struct = (
         # settings, type to cast, default
@@ -253,25 +270,43 @@ def main():
         ("wg-gen-web-path", str, "/etc/wireguard/"),
     )
 
-    config_path = args.config or os.getenv("WIRELOGD_CONFIG")
-    if config_path and not pathlib.Path(config_path).exists():
-        sys.exit(f"error: {config_path} not found")
-    elif not config_path:
-        config_path = "/etc/wirelogd.cfg"
+    config_path = (
+        args.config
+        or os.getenv("WIRELOGD_CONFIG")
+        or "/etc/wirelogd.cfg"
+    )
+
     config = parse_config(config_struct, config_path, args)
 
-    log = logging.getLogger('wirelogd')
-    log.setLevel(logging.DEBUG)
-    log_stream = logging.StreamHandler()
-    log_stream.setFormatter(logging.Formatter("%(levelname)s - %(message)s"))
-    if config["debug"]:
-        log_stream.setLevel(logging.DEBUG)
-    else:
-        log_stream.setLevel(logging.INFO)
-    log.addHandler(log_stream)
+    return config
 
-    log.info("starting wirelodg")
+
+def setup_logger(config: dict) -> logging.Logger:
+    """Set the main logger."""
+
+    log_level = logging.DEBUG if config["debug"] else logging.INFO
+
+    log_format = logging.Formatter("%(levelname)s - %(message)s")
+
+    log_stream = logging.StreamHandler()
+    log_stream.setFormatter(log_format)
+    log_stream.setLevel(log_level)
+
+    logger = logging.getLogger('wirelogd')
+    logger.setLevel(log_level)
+    logger.addHandler(log_stream)
+
+    return logger
+
+
+def main():
+    """Main function."""
+
     try:
+        args = setup_parser().parse_args()
+        config = setup_config(args)
+        log = setup_logger(config)
+
         run_loop(config, log)
     except KeyboardInterrupt:
         sys.exit(0)

@@ -1,0 +1,52 @@
+.TH wirelogd "1" Manual
+.SH NAME
+wirelogd
+.SH SYNOPSIS
+.B wirelogd
+[-h] [--config str] [--debug] [--refresh int] [--sudo] [--timeout int] [--wg-gen-web] [--wg-gen-web-path str]
+.SH DESCRIPTION
+Wirelogd is a logging daemon for WireGuard. Since WireGuard itself does not
+log the state of its peers (and since it is UDP based so, as i understand it,
+there no concept of "connection state"), Wirelogd relies on the latest
+handshake to determine if a peer is active or inactive. While there is trafic
+the handshake should be renewed every 2 minutes. If there is no trafic,
+handshake is not renewed. Based on this behavior we assume that if there is no
+new handshake after a while (default Wirelogd timeout value is 5 minutes), the
+client is probably inactive.
+.SH OPTIONS
+
+.TP
+\fB\-\-config\fR str, \fB\-c\fR str
+path to configuration file
+
+.TP
+\fB\-\-debug\fR, \fB\-d\fR
+enable debug logging
+
+.TP
+\fB\-\-refresh\fR int, \fB\-r\fR int
+refresh interval in seconds
+
+.TP
+\fB\-\-sudo\fR, \fB\-s\fR
+run subprocess commands with sudo
+
+.TP
+\fB\-\-timeout\fR int, \fB\-t\fR int
+wireguard handshake timeout in seconds
+
+.TP
+\fB\-\-wg\-gen\-web\fR, \fB\-w\fR
+link peer with its wg\-gen\-web config name
+
+.TP
+\fB\-\-wg\-gen\-web\-path\fR str
+path where wg\-gen\-web store its config files
+
+.SH AUTHORS
+.B wirelogd
+was written by Nicolas Karolak <nicolas.karolak@univ\-eiffel.fr>.
+.SH DISTRIBUTION
+The latest version of wirelogd may be downloaded from
+.UR https://openproject.u\-pem.fr/projects/wirelogd
+.UE

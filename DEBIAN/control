@@ -1,0 +1,15 @@
+Package: wirelogd
+Version: 0.1.1
+Section: utils
+Priority: optional
+Architecture: all
+Depends: adduser, python3, sudo, wireguard-tools
+Maintainer: Nicolas Karolak <nicolas.karolak@univ-eiffel.fr>
+Description: WireGuard logging daemon
+  Wirelogd is a logging daemon for WireGuard. Since WireGuard itself does not log
+  the state of its peers (and since it is UDP based so, there no concept of
+  "connection state"), Wirelogd relies on the latest handshake to determine if a
+  peer is active or inactive. While there is trafic the handshake should be
+  renewed every 2 minutes. If there is no trafic, handshake is not renewed. Based
+  on this behavior we assume that if there is no new handshake after a while
+  (default Wirelogd timeout value is 5 minutes), the client is probably inactive.

@@ -126,3 +126,5 @@ dmypy.json
 
 # local config file
 config.toml
+
+tmp/

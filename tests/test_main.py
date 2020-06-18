@@ -1,5 +1,6 @@
 #!/usr/bin/env pytest
 
+import pytest
 import wirelogd.main as wl
 
 
@@ -145,16 +146,42 @@ def test_peer_dict():
     assert d["interface"] == "wg0"
 
 
+def test_peer_link_wggw(tmp_path):
+    import json
+    c = {"publicKey": "mypubkey", "name": "test"}
+    f = tmp_path / "wggw-client-uuid-like-filename"
+    f.write_text(json.dumps(c))
+    p = ["wg0", "mypubkey", "", "endpoint", "allowed-ips", "1", "", "", ""]
+    d = wl.peer_dict(p, True, tmp_path)
+
+    assert isinstance(d, dict)
+    assert d["name"] == "test"
+    assert d["public-key"] == "mypubkey"
+
+
 def test_get_peers(fake_process):
     fake_process.register_subprocess(
         ["wg", "show", "all", "dump"],
-        stdout=b"wg0\tpubkey\tpsk\tep\tips\t1\t1\t1\t1\n"
+        stdout=b"wg0\tpubkey\tpsk\tep\tips\t1\t1\t1\t1\n",
     )
     p = wl.get_peers(False, False, None)
 
     assert isinstance(p, list)
     assert isinstance(p[0], dict)
     assert p[0]["interface"] == "wg0"
+
+
+def test_get_peers_sudo(fake_process):
+    fake_process.register_subprocess(
+        ["sudo", "wg", "show", "all", "dump"],
+        stdout=b"wg0\tpubkey\tpsk\tep\tips\t1\t1\t1\t1\n",
+    )
+    p = wl.get_peers(True, False, None)
+
+    assert isinstance(p, list)
+    assert isinstance(p[0], dict)
+    assert p[0]["interface"] == "wg0"
+
 
 def test_check_timeout():
     import time
@@ -164,3 +191,37 @@ def test_check_timeout():
 
     assert wl.check_timeout(now, timeout) is False
     assert wl.check_timeout(past, timeout) is True
+
+
+def test_setup_parser():
+    import argparse
+    p = wl.setup_parser()
+    a = p.parse_args(["--config", "/dev/null"])
+
+    assert isinstance(p, argparse.ArgumentParser)
+    assert hasattr(a, "config")
+    assert a.config == "/dev/null"
+
+
+def test_setup_logger_debug():
+    import logging
+    l = wl.setup_logger({"debug": True})
+
+    assert isinstance(l, logging.Logger)
+    assert l.isEnabledFor(logging.DEBUG)
+
+
+def test_setup_logger_info():
+    import logging
+    l = wl.setup_logger({"debug": False})
+
+    assert isinstance(l, logging.Logger)
+    assert l.isEnabledFor(logging.INFO)
+
+
+def test_setup_config():
+    a = wl.setup_parser().parse_args([])
+    c = wl.setup_config(a)
+
+    assert isinstance(c, dict)
+    assert "debug" in c.keys()

@@ -1,6 +1,12 @@
 # Wirelogd
 
-Wirelogd is a logging daemon for WireGuard. Since WireGuard itself does not log the state of its peers (and since it is UDP based so, as i understand it, there no concept of "connection state"), Wirelogd relies on the latest handshake to determine if a peer is active or inactive. According to the [WireGuard whitepaper](https://www.wireguard.com/papers/wireguard.pdf) the handshake should be renewed every 2 minutes. If there is no trafic, handshake is not renewed. Based on this behavior we assume that if there is no new handshake after a while (default Wirelogd timeout value is 5 minutes), the client is probably inactive.
+Wirelogd is a logging daemon for WireGuard. Since WireGuard itself does not log
+the state of its peers (and since it is UDP based so, there no concept of
+"connection state"), Wirelogd relies on the latest handshake to determine if a
+peer is active or inactive. While there is trafic the handshake should be
+renewed every 2 minutes. If there is no trafic, handshake is not renewed. Based
+on this behavior we assume that if there is no new handshake after a while
+(default Wirelogd timeout value is 5 minutes), the client is probably inactive.
 
 Output in journalctl will look like this:
 

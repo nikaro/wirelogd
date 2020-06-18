@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 User=wirelogd
 Group=root
-ExecStart=/usr/local/bin/wirelogd
+ExecStart=/usr/bin/wirelogd
 Restart=on-failure
 
 [Install]

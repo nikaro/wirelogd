@@ -1,0 +1,16 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    configure)
+        if [ -z "$2" ]; then
+            if ! getent passwd wirelogd >>/dev/null 2>&1 ; then
+                useradd --home-dir /var/run/wirelogd --shell /usr/sbin/nologin --system wirelogd
+            fi
+            systemctl daemon-reload
+            systemctl enable --now wirelogd.service
+        fi
+    ;;
+    *)
+    ;;
+esac
