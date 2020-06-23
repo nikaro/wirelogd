@@ -29,5 +29,7 @@ RUN \
         flake8-docstrings \
         flake8-import-order \
         flake8-quotes \
+        mypy \
+        pylint \
         && \
     :
