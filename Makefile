@@ -40,10 +40,7 @@ dev:
 .PHONY: lint
 ## lint: Run linters
 lint:
-	autopep8 --diff --recursive ./wirelogd/
 	flake8 ./wirelogd/
-	pylint --rcfile=setup.cfg ./wirelogd/
-	bandit -r ./wirelogd/
 
 .PHONY: test
 ## test: Run tests

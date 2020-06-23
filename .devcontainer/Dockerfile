@@ -23,7 +23,11 @@ RUN \
         wheel \
         && \
     pip install -U \
-        autopep8 \
         flake8 \
+        flake8-bandit \
+        flake8-commas \
+        flake8-docstrings \
+        flake8-import-order \
+        flake8-quotes \
         && \
     :
