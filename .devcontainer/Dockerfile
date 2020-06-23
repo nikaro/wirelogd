@@ -8,6 +8,7 @@ ENV PATH ${PYVENV}/bin:${PATH}
 RUN \
     sudo apt-get update && \
     sudo apt-get install --no-install-recommends --yes \
+        fakeroot \
         python3-venv \
         && \
     sudo apt-get clean --yes && \
