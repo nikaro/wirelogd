@@ -4,7 +4,7 @@ BINDIR?=${_INSTDIR}/bin
 SHAREDIR?=${_INSTDIR}/share/wirelogd
 MANDIR?=${_INSTDIR}/share/man
 
-VERSION=0.1.2
+VERSION=0.1.2-3
 
 .PHONY: all
 all: build

@@ -42,15 +42,26 @@ optional arguments:
 
 ## Installation
 
+### deb package
+
 ```
-# useradd --system --user-group wirelogd
 # git clone <repo-url> <dest-path>
 # cd <dest-path>
-# make install
+# make deb
+# dpkg -i dist/wirelogd-<version>.deb
+```
+
+### Manual
+
+```
+# git clone <repo-url> <dest-path>
+# cd <dest-path>
+# make PREFIX=/usr install
 # cp contrib/wirelogd.cfg /etc/
 # cp contrib/wirelogd-nopasswd /etc/sudoers.d/
 # cp contrib/wirelogd.service /etc/systemd/system/
-# chmod g+rx /etc/wireguard
+# useradd --home-dir /var/run/wirelogd --shell /usr/sbin/nologin --system --user-group wirelogd
+# setfacl -m u:wirelogd:rX /etc/wireguard
 # systemctl daemon-reload
 # systemctl enable --now wirelogd.service
 ```

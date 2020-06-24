@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 User=wirelogd
-Group=root
+Group=wirelogd
 ExecStart=/usr/bin/wirelogd
 Restart=on-failure
 
