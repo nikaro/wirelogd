@@ -21,8 +21,10 @@ import pathlib
 import subprocess  # nosec
 import sys
 import time
+from functools import lru_cache
 
 
+@lru_cache(maxsize=6)
 def booly(value: str) -> bool:
     """Return a boolean from values like 'yes', 'no', etc."""
     truthy_values = (
@@ -100,6 +102,7 @@ def parse_config(struct: tuple, path: str, args: argparse.Namespace) -> dict:
     return config
 
 
+@lru_cache(maxsize=128)
 def link_wggw(path: str, pubkey: str) -> str:
     """Return name from wg-gen-web config matching with public key."""
     files = pathlib.Path(path).glob('*-*-*-*-*')
@@ -129,7 +132,7 @@ def peer_dict(peer: list, wggw: bool, wggw_path: str) -> dict:
     return fpeer
 
 
-def get_peers(sudo: bool, wggw: bool, wggw_path: str) -> list:
+def get_peers(sudo: bool, wggw: bool, wggw_path: str) -> tuple:
     """Return list of peers, each peer as dict of informations."""
     # run command
     cmd = ['wg', 'show', 'all', 'dump']
@@ -148,7 +151,7 @@ def get_peers(sudo: bool, wggw: bool, wggw_path: str) -> list:
         for x in res.stdout.decode().strip().split('\n')
         if len(x.split()) == 9
     ]
-    peers = [peer_dict(x, wggw, wggw_path) for x in peers_list]
+    peers = tuple(peer_dict(x, wggw, wggw_path) for x in peers_list)
 
     return peers
 

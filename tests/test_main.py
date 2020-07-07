@@ -166,7 +166,7 @@ def test_get_peers(fake_process):
     )
     p = wl.get_peers(False, False, None)
 
-    assert isinstance(p, list)
+    assert isinstance(p, tuple)
     assert isinstance(p[0], dict)
     assert p[0]["interface"] == "wg0"
 
@@ -178,7 +178,7 @@ def test_get_peers_sudo(fake_process):
     )
     p = wl.get_peers(True, False, None)
 
-    assert isinstance(p, list)
+    assert isinstance(p, tuple)
     assert isinstance(p[0], dict)
     assert p[0]["interface"] == "wg0"
 
