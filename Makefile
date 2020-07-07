@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 PREFIX?=/usr/local
 _INSTDIR=${DESTDIR}${PREFIX}
 BINDIR?=${_INSTDIR}/bin
@@ -66,6 +68,8 @@ build:
 	python3 setup.py sdist bdist_wheel
 
 
+.PHONY: deb
+## deb: Build Debian package
 deb:
 	$(MAKE) DESTDIR=tmp/deb PREFIX=/usr install
 	mkdir -p \
