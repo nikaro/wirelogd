@@ -1,10 +1,10 @@
 # Wirelogd
 
 Wirelogd is a logging daemon for WireGuard. Since WireGuard itself does not log
-the state of its peers (and since it is UDP based so, there no concept of
+the state of its peers (and since it is UDP based so there is no concept of
 "connection state"), Wirelogd relies on the latest handshake to determine if a
 peer is active or inactive. While there is trafic the handshake should be
-renewed every 2 minutes. If there is no trafic, handshake is not renewed. Based
+renewed every 2 minutes. If there is no trafic handshake is not renewed. Based
 on this behavior we assume that if there is no new handshake after a while
 (default Wirelogd timeout value is 5 minutes), the client is probably inactive.
 
@@ -45,17 +45,17 @@ optional arguments:
 ### deb package
 
 ```
-# git clone <repo-url> <dest-path>
-# cd <dest-path>
-# make deb
+$ git clone <repo-url> <dest-path>
+$ cd <dest-path>
+$ make deb
 # dpkg -i dist/wirelogd-<version>.deb
 ```
 
 ### Manual
 
 ```
-# git clone <repo-url> <dest-path>
-# cd <dest-path>
+$ git clone <repo-url> <dest-path>
+$ cd <dest-path>
 # make PREFIX=/usr install
 # cp contrib/wirelogd.cfg /etc/
 # cp contrib/wirelogd-nopasswd /etc/sudoers.d/
@@ -103,4 +103,4 @@ Configuration precedence is, by lowest (most easily overridden) to highest (over
 
 [wg-gen-web](https://github.com/vx3r/wg-gen-web) is a simple web based configuration generator for WireGuard.
 
-Its usage with Wirelogd is optional. It used just to be able to log the name given into wg-gen-web to peer, this way it is easier to know to which user belong a public key.
+Its usage with Wirelogd is optional. It is used just to be able to log the peer username given into wg-gen-web, this way it is easier to know to which user belong a public key.
