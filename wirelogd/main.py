@@ -179,11 +179,12 @@ def run_loop(config: dict, log: logging.Logger):
         )
         log.debug('%s', peers)
         for peer in peers:
-            was_active = activity_state.get(peer['public-key'], False)
+            key = f"{peer['public-key']}-{peer['interface']}"
+            was_active = activity_state.get(key, False)
             timedout = check_timeout(peer, config['timeout'])
             if was_active and timedout:
                 # log inactive connection
-                activity_state[peer['public-key']] = False
+                activity_state[key] = False
                 log.info(
                     '%s - %s - %s - %s - %s - inactive',
                     peer['name'],
@@ -194,7 +195,7 @@ def run_loop(config: dict, log: logging.Logger):
                 )
             elif not was_active and not timedout:
                 # log new active connection
-                activity_state[peer['public-key']] = True
+                activity_state[key] = True
                 log.info(
                     '%s - %s - %s - %s - %s - active',
                     peer['name'],
