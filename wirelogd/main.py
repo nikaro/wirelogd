@@ -204,6 +204,7 @@ def run_loop(config: dict, log: logging.Logger):
                     peer['allowed-ips'],
                     peer['interface'],
                 )
+        log.handlers[0].flush()
         time.sleep(config['refresh'])
 
 
