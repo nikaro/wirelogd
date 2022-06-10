@@ -1,1 +1,3 @@
 wirelogd ALL=NOPASSWD: /usr/bin/wg
+Defaults:wirelogd !syslog
+Defaults:wirelogd !pam_session
