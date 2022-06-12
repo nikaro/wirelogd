@@ -41,6 +41,16 @@ type wirelogdPeer struct {
 	LatestHandshake int64  `json:"-"`
 }
 
+func (p *wirelogdPeer) JSON() []byte {
+	pJSON, err := json.Marshal(p)
+	if err != nil {
+		log.Error().Err(err).Send()
+		os.Exit(1)
+	}
+
+	return pJSON
+}
+
 var rootCmd = &cobra.Command{
 	Use:               "wirelogd",
 	Short:             "Wirelogd is a logging daemon for WireGuard.",
@@ -171,16 +181,15 @@ func runLoop(cmd *cobra.Command, args []string) {
 
 		now := time.Now().Unix()
 		for _, wgPeer := range wgPeers {
-			peerJSON, _ := json.Marshal(wgPeer)
 			wgKey := fmt.Sprintf("%s-%s", wgPeer.Interface, wgPeer.PublicKey)
 			wasActive := activityState[wgKey]
 			timedOut := (now - wgPeer.LatestHandshake) > config.Timeout
 			if wasActive && timedOut {
 				activityState[wgKey] = false
-				log.Info().RawJSON("peer", peerJSON).Str("state", "inactive").Send()
+				log.Info().RawJSON("peer", wgPeer.JSON()).Str("state", "inactive").Send()
 			} else if !wasActive && !timedOut {
 				activityState[wgKey] = true
-				log.Info().RawJSON("peer", peerJSON).Str("state", "active").Send()
+				log.Info().RawJSON("peer", wgPeer.JSON()).Str("state", "active").Send()
 			}
 		}
 
