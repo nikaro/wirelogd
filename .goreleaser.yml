@@ -1,0 +1,50 @@
+---
+
+before:
+  hooks:
+    - "go mod tidy"
+
+builds:
+  - env:
+      - "CGO_ENABLED=0"
+    goos:
+      - "linux"
+    goarch:
+      - "amd64"
+      - "arm64"
+
+changelog:
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "typo"
+
+nfpms:
+  - package_name: "wirelogd"
+    homepage: "https://github.con/nikaro/wirelogd"
+    description: "Wirelogd is a logging daemon for WireGuard."
+    maintainer: "Nicolas Karolak <nicolas@karolak.fr>"
+    license: "GPLv3"
+    formats:
+      - "deb"
+    recommends:
+      - "acl"
+    contents:
+      - src: "contrib/wirelogd.service"
+        dst: "/lib/systemd/system/wirelogd.service"
+      - src: "contrib/config.toml"
+        dst: "/etc/wirelogd/config.toml"
+      - src: "man/wirelogd.1"
+        dst: "/usr/share/man/man1/wirelogd.1"
+      - src: "completions/wirelogd.bash"
+        dst: "/usr/share/bash-completion/completions/wirelogd"
+      - src: "completions/wirelogd.fish"
+        dst: "/usr/share/fish/vendor_completions.d/wirelogd.fish"
+      - src: "completions/wirelogd.zsh"
+        dst: "/usr/share/zsh/site-functions/_wirelogd"
+      - src: "LICENSE"
+        dst: "/usr/share/licenses/wirelogd/LICENSE"
+    scripts:
+      postinstall: "contrib/postinstall-deb.sh"

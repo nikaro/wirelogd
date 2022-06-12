@@ -6,6 +6,8 @@ After=network.target
 Type=simple
 User=wirelogd
 Group=wirelogd
+CapabilityBoundingSet=CAP_NET_ADMIN
+AmbientCapabilities=CAP_NET_ADMIN
 ExecStart=/usr/bin/wirelogd
 Restart=on-failure
 

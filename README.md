@@ -1,5 +1,8 @@
 # Wirelogd
 
+> :warning: Wirelogd has been rewritten in Go, you can still found the old
+> Python version in `python` branch.
+
 Wirelogd is a logging daemon for WireGuard. Since WireGuard itself does not log
 the state of its peers (and since it is UDP based so there is no concept of
 "connection state"), Wirelogd relies on the latest handshake to determine if a
@@ -12,74 +15,59 @@ Output in journalctl will look like this:
 
 ```
 # journalctl -t wirelogd -f
-juin 12 15:19:12 hostname wirelogd[15233]: INFO - starting wirelodg
-#juin 12 15:19:37 hostname wirelogd[15233]: INFO - <wg-gen-web-user> - <public-key> - <endpoint-aka-public-ip> - <allowed-ips-aka-tunnel-ips> - <interface> - <state>#
-juin 12 15:19:37 hostname wirelogd[15233]: INFO - unknown - NRCIeq4a/vChupjDlomdYZyJgmPxrYZsHmxWx4Z409A= - 149.215.14.193:42967 - 10.6.6.2/32 - wg0 - active
-juin 12 15:26:38 hostname wirelogd[15233]: INFO - unknown - NRCIeq4a/vChupjDlomdYZyJgmPxrYZsHmxWx4Z409A= - 149.215.14.193:42967 - 10.6.6.2/32 - wg0 - inactive
+juin 12 15:19:12 hostname wirelogd[15233]: {"level":"info","time":"2022-06-12T11:29:25+02:00","message":"start wirelogd"}
+juin 12 15:19:37 hostname wirelogd[15233]: {"level":"info","peer":{"interface":"wg0","public_key":"xr4lhgUWOQHTWf5rYTr2Ia0710xsCNaKAl8PtNTp3TQ=","endpoint":"203.0.113.162:57891","allowed_ips":"192.0.2.119"},"state":"active","time":"2022-06-12T11:28:01+02:00"}
 ```
 
 ## Usage
 
 ```
 # wirelogd -h
-usage: wirelogd [-h] [--config PATH] [--debug] [--refresh SEC] [--sudo]
-                [--timeout SEC] [--wg-gen-web] [--wg-gen-web-path]
+Wirelogd is a logging daemon for WireGuard.
 
-WireGuard logging.
+Usage:
+  wirelogd [flags]
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --config str, -c str  path to configuration file
-  --debug, -d           enable debug logging
-  --refresh int, -r int
-                        refresh interval in seconds
-  --sudo, -s            run subprocess commands with sudo
-  --timeout int, -t int
-                        wireguard handshake timeout in seconds
-  --wg-gen-web, -w      link peer with its wg-gen-web config name
-  --wg-gen-web-path     path where wg-gen-web store its config files
+Flags:
+  -c, --config string   path to configuration file
+  -d, --debug           enable debug logging
+  -h, --help            help for wirelogd
+  -r, --refresh int     refresh interval in seconds
+  -t, --timeout int     wireguard handshake timeout in seconds
 ```
 
 ## Installation
-
-### deb package
-
-```
-$ git clone <repo-url> <dest-path>
-$ cd <dest-path>
-$ make deb
-# dpkg -i dist/wirelogd-<version>.deb
-```
 
 ### Manual
 
 ```
 $ git clone <repo-url> <dest-path>
 $ cd <dest-path>
-# make PREFIX=/usr install
-# cp contrib/wirelogd.cfg /etc/
-# cp contrib/wirelogd-nopasswd /etc/sudoers.d/
-# cp contrib/wirelogd.service /etc/systemd/system/
-# useradd --home-dir /var/run/wirelogd --shell /usr/sbin/nologin --system --user-group wirelogd
-# setfacl -m u:wirelogd:rX /etc/wireguard
-# systemctl daemon-reload
-# systemctl enable --now wirelogd.service
+$ make
+$ sudo make PREFIX=/usr install
+$ sudo mkdir -p /etc/wirelogd
+$ sudo cp /usr/share/wirelogd/config.toml /etc/wirelogd
+$ sudo cp /usr/share/wirelogd/wirelogd-nopasswd /etc/sudoers.d/
+$ sudo cp /usr/share/wirelogd/wirelogd.service /etc/systemd/system/
+$ sudo useradd --home-dir /var/run/wirelogd --shell /usr/sbin/nologin --system --user-group wirelogd
+$ sudo systemctl daemon-reload
+$ sudo systemctl enable --now wirelogd.service
 ```
 
 ## Configuration
 
-By default Wirelogd will look for its configuration in `/etc/wirelogd.cfg`, you can override this by using `--config/-c` command-line argument or by specifying a `WIRELOGD_CONFIG` variable in your environment. Wirelogd will fallback on its hard-coded defaults if no configuration is specified.
+By default Wirelogd will look for its configuration in
+`/etc/wirelogd/config.toml`, you can override this by using `--config/-c`
+command-line argument or by specifying a `WIRELOGD_CONFIG` variable in your
+environment. Wirelogd will fallback on its hard-coded defaults if no
+configuration is specified.
 
 Here is an exemple configuration file, with the default values:
 
-```ini
-[wirelogd]
+```toml
 debug = no
 refresh = 5
-sudo = no
 timeout = 300
-wg-gen-web = no
-wg-gen-web-path = /etc/wireguard/
 ```
 
 Here are the environment variables available:
@@ -87,20 +75,12 @@ Here are the environment variables available:
 - `WIRELOGD_CONFIG`
 - `WIRELOGD_DEBUG`
 - `WIRELOGD_REFRESH`
-- `WIRELOGD_SUDO`
 - `WIRELOGD_TIMEOUT`
-- `WIRELOGD_WG_GEN_WEB`
-- `WIRELOGD_WG_GEN_WEB_PATH`
 
-Configuration precedence is, by lowest (most easily overridden) to highest (overrides all others):
+Configuration precedence is, by lowest (most easily overridden) to highest
+(overrides all others):
 
 - hard-coded defaults
-- `/etc/wirelogd.cfg` or given configuration file (by env or args)
+- `/etc/wirelogd/config.toml` or given configuration file (by env or args)
 - environment variables
 - command-line arguments
-
-## wg-gen-web
-
-[wg-gen-web](https://github.com/vx3r/wg-gen-web) is a simple web based configuration generator for WireGuard.
-
-Its usage with Wirelogd is optional. It is used just to be able to log the peer username given into wg-gen-web, this way it is easier to know to which user belong a public key.
