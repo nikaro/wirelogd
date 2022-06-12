@@ -1,101 +1,106 @@
-SHELL := /bin/bash
-
+APP=wirelogd
 PREFIX?=/usr/local
 _INSTDIR=${DESTDIR}${PREFIX}
 BINDIR?=${_INSTDIR}/bin
-SHAREDIR?=${_INSTDIR}/share/wirelogd
+SHAREDIR?=${_INSTDIR}/share/${APP}
 MANDIR?=${_INSTDIR}/share/man
 
-VERSION=0.1.3-1
+GOOS?=$(shell go env GOOS)
+GOARCH?=$(shell go env GOARCH)
 
 .PHONY: all
 all: build
+
+.PHONY: setup
+## setup: Setup go modules
+setup:
+	go get -u all
+	go mod tidy
+	go mod vendor
+
+.PHONY: build
+## build: Build for the current target
+build:
+	@echo "Building..."
+	env CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -mod vendor -o build/${APP}-${GOOS}-${GOARCH} .
+	build/${APP}-${GOOS}-${GOARCH} man > man/wirelogd.1
+	build/${APP}-${GOOS}-${GOARCH} completion bash > completions/${APP}.bash
+	build/${APP}-${GOOS}-${GOARCH} completion fish > completions/${APP}.fish
+	build/${APP}-${GOOS}-${GOARCH} completion zsh > completions/${APP}.zsh
+
+.PHONY: build-all
+## build-all: Build for all targets
+build-all:
+	env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(MAKE) build
+	env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(MAKE) build
 
 .PHONY: install
 ## install: Install the application
 install:
 	@echo "Installing..."
-	@mkdir -m755 -p ${BINDIR} ${SHAREDIR} ${MANDIR}/man1
-	@install -m755 wirelogd/main.py ${BINDIR}/wirelogd
-	@install -m644 man/wirelogd.1 ${MANDIR}/man1/wirelogd.1
-	@install -m644 contrib/wirelogd.cfg ${SHAREDIR}/
-	@install -m644 contrib/wirelogd.service ${SHAREDIR}/
-	@install -m644 contrib/wirelogd-nopasswd ${SHAREDIR}/
+	install -Dm755 build/${APP}-${GOOS}-${GOARCH} ${BINDIR}/${APP}
+	install -Dm644 man/${APP}.1 ${MANDIR}/man1/
+	install -Dm644 completions/${APP}.bash ${SHAREDIR}/../bash-completion/completions/${APP}
+	install -Dm644 completions/${APP}.fish ${SHAREDIR}/../fish/vendor_completions.d/${APP}.fish
+	install -Dm644 completions/${APP}.zsh ${SHAREDIR}/../zsh/site-functions/_${APP}
+	install -Dm644 contrib/config.toml ${SHAREDIR}/
+	install -Dm644 contrib/${APP}.service ${SHAREDIR}/
 
 .PHONY: uninstall
 ## uninstall: Uninstall the application
 uninstall:
 	@echo "Uninstalling..."
-	@rm -f ${BINDIR}/wirelogd
-	@rm -f ${MANDIR}/man1/wirelogd.1
-	@rm -f ${SHAREDIR}/*
-	@rmdir --ignore-fail-on-non-empty ${BINDIR}
-	@rmdir --ignore-fail-on-non-empty ${SHAREDIR}
-	@rmdir --ignore-fail-on-non-empty ${MANDIR}/man1
-	@rmdir --ignore-fail-on-non-empty ${MANDIR}
-
-.PHONY: dev
-## dev: Install development dependencies with pip
-dev:
-	python3 -m pip install -e .[dev,test]
+	rm -f ${BINDIR}/${APP}
+	rm -f ${MANDIR}/man1/${APP}.1
+	rm -f ${SHAREDIR}/*
+	rm -f ${SHAREDIR}/../bash-completion/completions/${APP}
+	rm -f ${SHAREDIR}/../fish/vendor_completions.d/${APP}.fish
+	rm -f ${SHAREDIR}/../zsh/site-functions/_${APP}
+	rmdir --ignore-fail-on-non-empty ${BINDIR}
+	rmdir --ignore-fail-on-non-empty ${SHAREDIR}
+	rmdir --ignore-fail-on-non-empty ${MANDIR}/man1
+	rmdir --ignore-fail-on-non-empty ${MANDIR}
+	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../bash-completion/completions
+	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../bash-completion
+	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../fish/vendor_completions.d
+	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../fish
+	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../zsh/site-functions
+	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../zsh
 
 .PHONY: lint
 ## lint: Run linters
 lint:
-	flake8 ./wirelogd/
+	@echo "Linting..."
+	staticcheck .
+
+.PHONY: format
+## format: Runs goimports on the project
+format:
+	@echo "Formatting..."
+	fd -t file -e go -E vendor/ | xargs goimports -l -w
 
 .PHONY: test
-## test: Run tests
+## test: Runs go test
 test:
-	pytest --cov-report=html --cov-report=term-missing --cov=wirelogd
+	@echo "Testing..."
+	go test ./...
 
 .PHONY: man
 ## man: Build manpage
 man:
-	@echo "Generating..."
-	@argparse-manpage \
-		--pyfile wirelogd/main.py \
-		--function setup_parser \
-		--author 'Nicolas Karolak' \
-		--author-email nicolas.karolak@univ-eiffel.fr \
-		--project-name wirelogd \
-		--url https://openproject.u-pem.fr/projects/wirelogd \
-		--output man/wirelogd.1
+	@echo "TODO"
 
-.PHONY: build
-## build: Build Python package
-build:
-	python3 setup.py sdist bdist_wheel
-
-
-.PHONY: deb
-## deb: Build Debian package
-deb:
-	$(MAKE) DESTDIR=tmp/deb PREFIX=/usr install
-	mkdir -p \
-		dist \
-		tmp/deb/etc \
-		tmp/deb/etc/systemd/system \
-		tmp/deb/etc/sudoers.d
-	cp -f tmp/deb/usr/share/wirelogd/wirelogd.cfg tmp/deb/etc/
-	cp -f tmp/deb/usr/share/wirelogd/wirelogd.service tmp/deb/etc/systemd/system/
-	cp -f tmp/deb/usr/share/wirelogd/wirelogd-nopasswd tmp/deb/etc/sudoers.d/
-	cp -r DEBIAN tmp/deb/
-	fakeroot dpkg-deb --build tmp/deb dist/wirelogd-${VERSION}.deb
+.PHONY: run
+## run: Runs go run
+run:
+	go run -race ${APP}.go
 
 .PHONY: clean
-## clean: Remove build artifacts
+## clean: Cleans the binary
 clean:
 	@echo "Cleaning..."
-	@rm -rf \
-		*.egg-info/ \
-		__pycache__/ \
-		build/ \
-		dist/ \
-		htmlcov/ \
-		tests/__pycache__/ \
-		tmp/ \
-		wirelogd/__pycache__/
+	rm -rf build/
+	rm -rf dist/
 
 .PHONY: help
 ## help: Print this help message
