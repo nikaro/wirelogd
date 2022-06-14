@@ -71,7 +71,7 @@ uninstall:
 ## lint: Run linters
 lint:
 	@echo "Linting..."
-	staticcheck .
+	golangci-lint run
 
 .PHONY: format
 ## format: Runs goimports on the project
