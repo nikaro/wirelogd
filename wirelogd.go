@@ -169,7 +169,7 @@ func runLoop(cmd *cobra.Command, args []string) {
 	log.Info().Msg("start wirelogd")
 
 	// catch sigterm signal
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
