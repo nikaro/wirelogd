@@ -70,7 +70,9 @@ func init() {
 	rootCmd.Flags().IntP("timeout", "t", 0, "wireguard handshake timeout in seconds")
 
 	// bind command flags
-	viper.BindPFlags(rootCmd.Flags())
+	if err := viper.BindPFlags(rootCmd.Flags()); err != nil {
+		log.Error().Err(err).Send()
+	}
 }
 
 func initConfig() {
@@ -82,7 +84,9 @@ func initConfig() {
 	// bind environment variables
 	viper.SetEnvPrefix("wirelogd")
 	viper.AutomaticEnv()
-	viper.BindEnv("config")
+	if err := viper.BindEnv("config"); err != nil {
+		log.Error().Err(err).Send()
+	}
 
 	// set config file path
 	if rootCmd.Flag("config").Value.String() != "" {
@@ -95,7 +99,9 @@ func initConfig() {
 	}
 
 	// read config
-	viper.ReadInConfig()
+	if err := viper.ReadInConfig(); err != nil {
+		log.Error().Err(err).Send()
+	}
 
 	// set global config
 	config = &wirelogdConfig{
