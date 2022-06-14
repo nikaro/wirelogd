@@ -100,7 +100,7 @@ func initConfig() {
 
 	// read config
 	if err := viper.ReadInConfig(); err != nil {
-		log.Error().Err(err).Send()
+		log.Warn().Err(err).Send()
 	}
 
 	// set global config
