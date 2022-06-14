@@ -173,4 +173,3 @@ complete -c wirelogd -e
 # The call to __wirelogd_prepare_completions will setup __wirelogd_comp_results
 # which provides the program's completion choices.
 complete -c wirelogd -n '__wirelogd_prepare_completions' -f -a '$__wirelogd_comp_results'
-

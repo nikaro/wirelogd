@@ -10,6 +10,6 @@ insert_final_newline = true
 [Dockerfile]
 indent_style = space
 
-[*.{json,yml}]
+[*.{json,yml,yaml}]
 indent_style = space
 indent_size = 2
