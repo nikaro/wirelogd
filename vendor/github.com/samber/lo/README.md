@@ -1,10 +1,12 @@
 # lo
 
-![Build Status](https://github.com/samber/lo/actions/workflows/go.yml/badge.svg)
+[![tag](https://img.shields.io/github/tag/samber/lo.svg)](https://github.com/samber/lo/releases)
 [![GoDoc](https://godoc.org/github.com/samber/lo?status.svg)](https://pkg.go.dev/github.com/samber/lo)
+![Build Status](https://github.com/samber/lo/actions/workflows/go.yml/badge.svg)
 [![Go report](https://goreportcard.com/badge/github.com/samber/lo)](https://goreportcard.com/report/github.com/samber/lo)
+[![codecov](https://codecov.io/gh/samber/lo/branch/master/graph/badge.svg)](https://codecov.io/gh/samber/lo)
 
-✨ **`lo` is a Lodash-style Go library based on Go 1.18+ Generics.**
+✨ **`samber/lo` is a Lodash-style Go library based on Go 1.18+ Generics.**
 
 This project started as an experiment with the new generics implementation. It may look like [Lodash](https://github.com/lodash/lodash) in some aspects. I used to code with the fantastic ["go-funk"](https://github.com/thoas/go-funk) package, but "go-funk" uses reflection and therefore is not typesafe.
 
@@ -12,7 +14,12 @@ As expected, benchmarks demonstrate that generics will be much faster than imple
 
 In the future, 5 to 10 helpers will overlap with those coming into the Go standard library (under package names `slices` and `maps`). I feel this library is legitimate and offers many more valuable abstractions.
 
-### Why this name?
+**See also:**
+
+- [samber/do](https://github.com/samber/do): A dependency injection toolkit based on Go 1.18+ Generics
+- [samber/mo](https://github.com/samber/mo): Monads based on Go 1.18+ Generics (Option, Result, Either...)
+
+**Why this name?**
 
 I wanted a **short name**, similar to "Lodash" and no Go package currently uses this name.
 
@@ -77,6 +84,11 @@ Supported helpers for slices:
 - Reject
 - Count
 - CountBy
+- Subset
+- Slice
+- Replace
+- ReplaceAll
+- Compact
 
 Supported helpers for maps:
 
@@ -88,8 +100,8 @@ Supported helpers for maps:
 - OmitBy
 - OmitByKeys
 - OmitByValues
-- Entries
-- FromEntries
+- Entries / ToPairs
+- FromEntries / FromPairs
 - Invert
 - Assign (merge of maps)
 - MapKeys
@@ -126,6 +138,8 @@ Supported intersection helpers:
 - Intersect
 - Difference
 - Union
+- Without
+- WithoutEmpty
 
 Supported search helpers:
 
@@ -134,6 +148,8 @@ Supported search helpers:
 - Find
 - FindIndexOf
 - FindLastIndexOf
+- FindKey
+- FindKeyBy
 - Min
 - MinBy
 - Max
@@ -152,11 +168,17 @@ Conditional helpers:
 Type manipulation helpers:
 
 - ToPtr
+- FromPtr
 - ToSlicePtr
 - ToAnySlice
 - FromAnySlice
 - Empty
+- IsEmpty
 - Coalesce
+
+Function helpers:
+
+- Partial
 
 Concurrency helpers:
 
@@ -591,7 +613,7 @@ count := lo.CountBy[int]([]int{1, 5, 1}, func(i int) bool {
 
 ### Subset
 
-Return part of a slice.
+Returns a copy of a slice from `offset` up to `length` elements. Like `slice[start:start+length]`, but does not panic on overflow.
 
 ```go
 in := []int{0, 1, 2, 3, 4}
@@ -604,6 +626,26 @@ sub := lo.Subset(in, -4, 3)
 
 sub := lo.Subset(in, -2, math.MaxUint)
 // []int{3, 4}
+```
+
+### Slice
+
+Returns a copy of a slice from `start` up to, but not including `end`. Like `slice[start:end]`, but does not panic on overflow.
+
+```go
+in := []int{0, 1, 2, 3, 4}
+
+slice := lo.Slice(in, 0, 5)
+// []int{0, 1, 2, 3, 4}
+
+slice := lo.Slice(in, 2, 3)
+// []int{2}
+
+slice := lo.Slice(in, 2, 6)
+// []int{2, 3, 4}
+
+slice := lo.Slice(in, 4, 3)
+// []int{}
 ```
 
 ### Replace
@@ -638,6 +680,17 @@ slice := lo.ReplaceAll(in, 0, 42)
 
 slice := lo.ReplaceAll(in, -1, 42)
 // []int{0, 1, 0, 1, 2, 3, 0}
+```
+
+### Compact
+
+Returns a slice of all non-zero elements.
+
+```go
+in := []string{"", "foo", "", "bar", ""}
+
+slice := lo.Compact[string](in)
+// []string{"foo", "bar"}
 ```
 
 ### Keys
@@ -716,7 +769,7 @@ m := lo.OmitByValues[string, int](map[string]int{"foo": 1, "bar": 2, "baz": 3}, 
 // map[string]int{"bar": 2}
 ```
 
-### Entries
+### Entries (alias: ToPairs)
 
 Transforms a map into array of key/value pairs.
 
@@ -734,7 +787,7 @@ entries := lo.Entries[string, int](map[string]int{"foo": 1, "bar": 2})
 // }
 ```
 
-### FromEntries
+### FromEntries (alias: FromPairs)
 
 Transforms an array of key/value pairs into a map.
 
@@ -845,7 +898,7 @@ r3 := lo.Clamp(42, -10, 10)
 // 10
 ```
 
-### SumBy 
+### SumBy
 
 Summarizes the values in a collection using the given return value from the iteration function.
 If collection is empty 0 is returned.
@@ -966,7 +1019,7 @@ ok := lo.Some[int]([]int{0, 1, 2, 3, 4, 5}, []int{-1, 6})
 
 ### SomeBy
 
-Returns true if the predicate returns true for any of the elements in the collection. 
+Returns true if the predicate returns true for any of the elements in the collection.
 If the collection is empty SomeBy returns false.
 
 ```go
@@ -1035,6 +1088,27 @@ Returns all distinct elements from both collections. Result will not change the 
 ```go
 union := lo.Union[int]([]int{0, 1, 2, 3, 4, 5}, []int{0, 2, 10})
 // []int{0, 1, 2, 3, 4, 5, 10}
+```
+
+### Without
+
+Returns slice excluding all given values.
+
+```go
+subset := lo.Without[int]([]int{0, 2, 10}, 2)
+// []int{0, 10}
+
+subset := lo.Without[int]([]int{0, 2, 10}, 0, 1, 2, 3, 4, 5)
+// []int{10}
+```
+
+### WithoutEmpty
+
+Returns slice excluding empty values.
+
+```go
+subset := lo.WithoutEmpty[int]([]int{0, 2, 10})
+// []int{2, 10}
 ```
 
 ### IndexOf
@@ -1107,6 +1181,40 @@ str, index, ok := lo.FindLastIndexOf[string]([]string{"foobar"}, func(i string) 
     return i == "b"
 })
 // "", -1, false
+```
+
+### FindKey
+
+Returns the key of the first value matching.
+
+```go
+result1, ok1 := lo.FindKey(map[string]int{"foo": 1, "bar": 2, "baz": 3}, 2)
+// "bar", true
+
+result2, ok2 := lo.FindKey(map[string]int{"foo": 1, "bar": 2, "baz": 3}, 42)
+// "", false
+
+type test struct {
+    foobar string
+}
+result3, ok3 := lo.FindKey(map[string]test{"foo": test{"foo"}, "bar": test{"bar"}, "baz": test{"baz"}}, test{"foo"})
+// "foo", true
+```
+
+### FindKeyBy
+
+Returns the key of the first element predicate returns truthy for.
+
+```go
+result1, ok1 := lo.FindKeyBy(map[string]int{"foo": 1, "bar": 2, "baz": 3}, func(k string, v int) bool {
+    return k == "foo"
+})
+// "foo", true
+
+result2, ok2 := lo.FindKeyBy(map[string]int{"foo": 1, "bar": 2, "baz": 3}, func(k string, v int) bool {
+    return false
+})
+// "", false
 ```
 
 ### Min
@@ -1323,6 +1431,19 @@ ptr := lo.ToPtr[string]("hello world")
 // *string{"hello world"}
 ```
 
+### FromPtr
+
+Returns the pointer value or empty.
+
+```go
+str := "hello world"
+value := lo.FromPtr[string](&str)
+// "hello world"
+
+value := lo.FromPtr[string](nil)
+// ""
+```
+
 ### ToSlicePtr
 
 Returns a slice of pointer copy of value.
@@ -1366,6 +1487,31 @@ lo.Empty[bool]()
 // false
 ```
 
+### IsEmpty
+
+Returns true if argument is a zero value.
+
+```go
+lo.IsEmpty[int](0)
+// true
+lo.IsEmpty[int](42)
+// false
+
+lo.IsEmpty[string]("")
+// true
+lo.IsEmpty[bool]("foobar")
+// false
+
+type test struct {
+    foobar string
+}
+
+lo.IsEmpty[test](test{foobar: ""})
+// true
+lo.IsEmpty[test](test{foobar: "foobar"})
+// false
+```
+
 ### Coalesce
 
 Returns the first non-empty arguments. Arguments must be comparable.
@@ -1383,9 +1529,24 @@ result, ok := lo.Coalesce[*string](nil, nilStr, &str)
 // &"foobar" true
 ```
 
+### Partial
+
+Returns new function that, when called, has its first argument set to the provided value.
+
+```go
+add := func(x, y int) int { return x + y }
+f := lo.Partial(add, 5)
+
+f(10)
+// 15
+
+f(42)
+// 47
+```
+
 ### Attempt
 
-Invokes a function N times until it returns valid output. Returning either the caught error or nil. When first argument is less than `1`, the function runs until a sucessfull response is returned.
+Invokes a function N times until it returns valid output. Returning either the caught error or nil. When first argument is less than `1`, the function runs until a successful response is returned.
 
 ```go
 iter, err := lo.Attempt(42, func(i int) error {
@@ -1423,9 +1584,9 @@ For more advanced retry strategies (delay, exponential backoff...), please take 
 
 ### AttemptWithDelay
 
-Invokes a function N times until it returns valid output, with a pause betwwen each call. Returning either the caught error or nil.
+Invokes a function N times until it returns valid output, with a pause between each call. Returning either the caught error or nil.
 
-When first argument is less than `1`, the function runs until a sucessfull response is returned.
+When first argument is less than `1`, the function runs until a successful response is returned.
 
 ```go
 iter, duration, err := lo.AttemptWithDelay(5, 2*time.Second, func(i int, duration time.Duration) error {
@@ -1532,7 +1693,9 @@ val := lo.Must(time.Parse("2006-01-02", "bad-value"))
 ```
 
 ### Must{0->6}
-Must* has the same behavior than Must, but returns multiple values.
+
+Must\* has the same behavior than Must, but returns multiple values.
+
 ```go
 func example0() (error)
 func example1() (int, error)
@@ -1551,13 +1714,28 @@ val1, val2, val3, val4, val5 := lo.Must5(example5())
 val1, val2, val3, val4, val5, val6 := lo.Must6(example6())
 ```
 
-You can wrap functions like `func (...)  (..., ok bool)`.
+You can wrap functions like `func (...) (..., ok bool)`.
+
 ```go
 // math.Signbit(float64) bool
 lo.Must0(math.Signbit(v))
 
 // bytes.Cut([]byte,[]byte) ([]byte, []byte, bool)
 before, after := lo.Must2(bytes.Cut(s, sep))
+```
+
+You can give context to the panic message by adding some printf-like arguments.
+
+```go
+val := lo.Must(lo.Find(myString, func(i string) bool {
+    return i == requiredChar
+}), "'%s' must always contain '%s'", myString, requiredChar)
+
+// MustX
+lo.Must0(example0(), "'%s' must always contain '%s'", myString, requiredChar)
+val1 := lo.Must1(example1(), "'%s' must always contain '%s'", myString, requiredChar)
+val1, val2 := lo.Must2(example2(), "'%s' must always contain '%s'", myString, requiredChar)
+...
 ```
 
 ## Try
@@ -1671,10 +1849,10 @@ PASS
 ok  	github.com/samber/lo	6.657s
 ```
 
-- `lo.Map` is way faster (x7) than `go-funk`, a relection-based Map implementation.
+- `lo.Map` is way faster (x7) than `go-funk`, a reflection-based Map implementation.
 - `lo.Map` have the same allocation profile than `for`.
 - `lo.Map` is 4% slower than `for`.
-- `lop.Map` is slower than `lo.Map` because it implies more memory allocation and locks. `lop.Map` will be usefull for long-running callbacks, such as i/o bound processing.
+- `lop.Map` is slower than `lo.Map` because it implies more memory allocation and locks. `lop.Map` will be useful for long-running callbacks, such as i/o bound processing.
 - `for` beats other implementations for memory and CPU.
 
 ## 🤝 Contributing
