@@ -64,6 +64,7 @@ Supported helpers for slices:
 - [FilterMap](#filtermap)
 - [FlatMap](#flatmap)
 - [Reduce](#reduce)
+- [ReduceRight](#reduceright)
 - [ForEach](#foreach)
 - [Times](#times)
 - [Uniq](#uniq)
@@ -78,6 +79,7 @@ Supported helpers for slices:
 - [Repeat](#repeat)
 - [RepeatBy](#repeatby)
 - [KeyBy](#keyby)
+- [Associate](#associate)
 - [Drop](#drop)
 - [DropRight](#dropright)
 - [DropWhile](#dropwhile)
@@ -90,6 +92,8 @@ Supported helpers for slices:
 - [Replace](#replace)
 - [ReplaceAll](#replaceall)
 - [Compact](#compact)
+- [IsSorted](#issorted)
+- [IsSortedByKey](#issortedbykey)
 
 Supported helpers for maps:
 
@@ -107,6 +111,7 @@ Supported helpers for maps:
 - [Assign (merge of maps)](#assign)
 - [MapKeys](#mapkeys)
 - [MapValues](#mapvalues)
+- [MapToSlice](#maptoslice)
 
 Supported math helpers:
 
@@ -174,6 +179,7 @@ Type manipulation helpers:
 
 - [ToPtr](#toptr)
 - [FromPtr](#fromptr)
+- [FromPtrOr](#fromptror)
 - [ToSlicePtr](#tosliceptr)
 - [ToAnySlice](#toanyslice)
 - [FromAnySlice](#fromanyslice)
@@ -280,6 +286,17 @@ sum := lo.Reduce[int, int]([]int{1, 2, 3, 4}, func(agg int, item int, _ int) int
     return agg + item
 }, 0)
 // 10
+```
+
+### ReduceRight
+
+Like `lo.Reduce` except that it iterates over elements of collection from right to left.
+
+```go
+result := lo.ReduceRight[[]int, []int]([][]int{{0, 1}, {2, 3}, {4, 5}}, func(agg []int, item []int, _ int) []int {
+	  return append(agg, item...)
+}, []int{}))
+// []int{4, 5, 2, 3, 0, 1}
 ```
 
 ### ForEach
@@ -441,7 +458,7 @@ Returns an array of shuffled values. Uses the Fisher-Yates shuffle algorithm.
 
 ```go
 randomOrder := lo.Shuffle[int]([]int{0, 1, 2, 3, 4, 5})
-// []int{0, 1, 2, 3, 4, 5}
+// []int{1, 4, 0, 3, 5, 2}
 ```
 
 ### Reverse
@@ -449,7 +466,7 @@ randomOrder := lo.Shuffle[int]([]int{0, 1, 2, 3, 4, 5})
 Reverses array so that the first element becomes the last, the second element becomes the second to last, and so on.
 
 ```go
-reverseOder := lo.Reverse[int]([]int{0, 1, 2, 3, 4, 5})
+reverseOrder := lo.Reverse[int]([]int{0, 1, 2, 3, 4, 5})
 // []int{5, 4, 3, 2, 1, 0}
 ```
 
@@ -525,6 +542,21 @@ result := lo.KeyBy[string, Character](characters, func(char Character) string {
     return string(rune(char.code))
 })
 //map[a:{dir:left code:97} d:{dir:right code:100}]
+```
+
+### Associate
+
+Returns a map containing key-value pairs provided by transform function applied to elements of the given slice.
+If any of two pairs would have the same key the last one gets added to the map.
+The returned map preserves the entry iteration order of the original array.
+
+```go
+in := []*foo{{baz: "apple", bar: 1}, {baz: "banana", bar: 2}},
+
+aMap := lo.Associate[*foo, string, int](in, func (f *foo) (string, int) {
+	return f.baz, f.bar
+})
+// map[string][int]{ "apple":1, "banana":2 }
 ```
 
 ### Drop
@@ -678,6 +710,26 @@ in := []string{"", "foo", "", "bar", ""}
 
 slice := lo.Compact[string](in)
 // []string{"foo", "bar"}
+```
+
+### IsSorted
+
+Checks if a slice is sorted.
+
+```go
+slice := lo.IsSorted([]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+// true
+```
+
+### IsSortedByKey
+
+Checks if a slice is sorted by iteratee.
+
+```go
+slice := lo.IsSortedByKey([]string{"a", "bb", "ccc"}, func(s string) int {
+    return len(s)
+})
+// true
 ```
 
 ### Keys
@@ -838,6 +890,19 @@ m2 := lo.MapValues[int, int64, string](m1, func(x int64, _ int) string {
 	return strconv.FormatInt(x, 10)
 })
 // map[int]string{1: "1", 2: "2", 3: "3"}
+```
+
+### MapValues
+
+Transforms a map into a slice based on specific iteratee.
+
+```go
+m := map[int]int64{1: 4, 2: 5, 3: 6}
+
+s := lo.MapToSlice(m, func(k int, v int) string {
+    return fmt.Sprintf("%d_%d", k, v)
+})
+// []string{"1_4", "2_5", "3_6"}
 ```
 
 ### Range / RangeFrom / RangeWithSteps
@@ -1489,6 +1554,19 @@ value := lo.FromPtr[string](&str)
 
 value := lo.FromPtr[string](nil)
 // ""
+```
+
+### FromPtrOr
+
+Returns the pointer value or the fallback value.
+
+```go
+str := "hello world"
+value := lo.FromPtrOr[string](&str, "empty")
+// "hello world"
+
+value := lo.FromPtrOr[string](nil, "empty")
+// "empty"
 ```
 
 ### ToSlicePtr
