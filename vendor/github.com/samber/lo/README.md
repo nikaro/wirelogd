@@ -79,7 +79,7 @@ Supported helpers for slices:
 - [Repeat](#repeat)
 - [RepeatBy](#repeatby)
 - [KeyBy](#keyby)
-- [Associate](#associate)
+- [Associate / SliceToMap](#associate-alias-slicetomap)
 - [Drop](#drop)
 - [DropRight](#dropright)
 - [DropWhile](#dropwhile)
@@ -122,6 +122,7 @@ Supported math helpers:
 Supported helpers for strings:
 
 - [Substring](#substring)
+- [ChunkString](#chunkstring)
 - [RuneLength](#runelength)
 
 Supported helpers for tuples:
@@ -432,7 +433,7 @@ Parallel processing: like `lo.PartitionBy()`, but callback is called in goroutin
 ```go
 import lop "github.com/samber/lo/parallel"
 
-partitions := lo.PartitionBy[int, string]([]int{-2, -1, 0, 1, 2, 3, 4, 5}, func(x int) string {
+partitions := lop.PartitionBy[int, string]([]int{-2, -1, 0, 1, 2, 3, 4, 5}, func(x int) string {
     if x < 0 {
         return "negative"
     } else if x%2 == 0 {
@@ -509,13 +510,13 @@ slice := lo.Repeat[foo](2, foo{"a"})
 Builds a slice with values returned by N calls of callback.
 
 ```go
-slice := lo.RepeatBy[int](0, func (i int) int {
-    return math.Pow(i, 2)
+slice := lo.RepeatBy[string](0, func (i int) string {
+    return strconv.FormatInt(math.Pow(i, 2), 10)
 })
 // []int{}
 
-slice := lo.RepeatBy[int](5, func (i int) int {
-    return math.Pow(i, 2)
+slice := lo.RepeatBy[string](5, func (i int) string {
+    return strconv.FormatInt(math.Pow(i, 2), 10)
 })
 // []int{0, 1, 4, 9, 16}
 ```
@@ -544,11 +545,12 @@ result := lo.KeyBy[string, Character](characters, func(char Character) string {
 //map[a:{dir:left code:97} d:{dir:right code:100}]
 ```
 
-### Associate
+### Associate (alias: SliceToMap)
 
 Returns a map containing key-value pairs provided by transform function applied to elements of the given slice.
 If any of two pairs would have the same key the last one gets added to the map.
-The returned map preserves the entry iteration order of the original array.
+
+The order of keys in returned map is not specified and is not guaranteed to be the same from the original array.
 
 ```go
 in := []*foo{{baz: "apple", bar: 1}, {baz: "banana", bar: 2}},
@@ -892,14 +894,14 @@ m2 := lo.MapValues[int, int64, string](m1, func(x int64, _ int) string {
 // map[int]string{1: "1", 2: "2", 3: "3"}
 ```
 
-### MapValues
+### MapToSlice
 
 Transforms a map into a slice based on specific iteratee.
 
 ```go
 m := map[int]int64{1: 4, 2: 5, 3: 6}
 
-s := lo.MapToSlice(m, func(k int, v int) string {
+s := lo.MapToSlice(m, func(k int, v int64) string {
     return fmt.Sprintf("%d_%d", k, v)
 })
 // []string{"1_4", "2_5", "3_6"}
@@ -976,6 +978,24 @@ sub := lo.Substring("hello", -4, 3)
 
 sub := lo.Substring("hello", -2, math.MaxUint)
 // "lo"
+```
+
+### ChunkString
+
+Returns an array of strings split into groups the length of size. If array can't be split evenly, the final chunk will be the remaining elements.
+
+```go
+lo.ChunkString("123456", 2)
+// []string{"12", "34", "56"}
+
+lo.ChunkString("1234567", 2)
+// []string{"12", "34", "56", "7"}
+
+lo.ChunkString("", 2)
+// []string{""}
+
+lo.ChunkString("1", 2)
+// []string{"1"}
 ```
 
 ### RuneLength
