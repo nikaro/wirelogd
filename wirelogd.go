@@ -99,8 +99,10 @@ func initConfig() {
 	}
 
 	// read config
-	if err := viper.ReadInConfig(); err != nil {
-		log.Warn().Err(err).Send()
+	if !lo.Contains([]string{"man", "completion"}, os.Args[1]) {
+		if err := viper.ReadInConfig(); err != nil {
+			log.Warn().Err(err).Send()
+		}
 	}
 
 	// set global config
