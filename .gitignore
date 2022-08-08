@@ -17,6 +17,7 @@ dist/
 
 # IDEs files
 .vscode/
+.idea/
 
 # Secrets
 config.toml
