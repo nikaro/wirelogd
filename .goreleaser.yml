@@ -16,6 +16,7 @@ builds:
 changelog:
   filters:
     exclude:
+      - "^build:"
       - "^docs:"
       - "^test:"
       - "^ci:"
