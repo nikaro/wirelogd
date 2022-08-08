@@ -45,6 +45,7 @@ install:
 	install -Dm644 completions/${APP}.zsh ${SHAREDIR}/../zsh/site-functions/_${APP}
 	install -Dm644 contrib/config.toml ${SHAREDIR}/config.toml
 	install -Dm644 contrib/${APP}.service ${SHAREDIR}/${APP}.service
+	sed -i'' -e 's,/usr,${PREFIX},g' ${SHAREDIR}/${APP}.service
 
 .PHONY: uninstall
 ## uninstall: Uninstall the application
