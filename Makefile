@@ -39,12 +39,12 @@ build-all:
 install:
 	@echo "Installing..."
 	install -Dm755 build/${APP}-${GOOS}-${GOARCH} ${BINDIR}/${APP}
-	install -Dm644 man/${APP}.1 ${MANDIR}/man1/
+	install -Dm644 man/${APP}.1 ${MANDIR}/man1/${APP}.1
 	install -Dm644 completions/${APP}.bash ${SHAREDIR}/../bash-completion/completions/${APP}
 	install -Dm644 completions/${APP}.fish ${SHAREDIR}/../fish/vendor_completions.d/${APP}.fish
 	install -Dm644 completions/${APP}.zsh ${SHAREDIR}/../zsh/site-functions/_${APP}
-	install -Dm644 contrib/config.toml ${SHAREDIR}/
-	install -Dm644 contrib/${APP}.service ${SHAREDIR}/
+	install -Dm644 contrib/config.toml ${SHAREDIR}/config.toml
+	install -Dm644 contrib/${APP}.service ${SHAREDIR}/${APP}.service
 
 .PHONY: uninstall
 ## uninstall: Uninstall the application
