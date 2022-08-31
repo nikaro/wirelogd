@@ -23,16 +23,20 @@ setup:
 build:
 	@echo "Building..."
 	env CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -mod vendor -o build/${APP}-${GOOS}-${GOARCH} .
-	build/${APP}-${GOOS}-${GOARCH} man > man/wirelogd.1
+
+.PHONY: man
+## man: Build manpage
+man:
+	@echo "Building manpage..."
+	build/${APP}-${GOOS}-${GOARCH} man > man/${APP}.1
+
+.PHONY: completion
+## man: Build completions
+completion:
+	@echo "Building completions..."
 	build/${APP}-${GOOS}-${GOARCH} completion bash > completions/${APP}.bash
 	build/${APP}-${GOOS}-${GOARCH} completion fish > completions/${APP}.fish
 	build/${APP}-${GOOS}-${GOARCH} completion zsh > completions/${APP}.zsh
-
-.PHONY: build-all
-## build-all: Build for all targets
-build-all:
-	env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(MAKE) build
-	env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(MAKE) build
 
 .PHONY: install
 ## install: Install the application
@@ -85,11 +89,6 @@ format:
 test:
 	@echo "Testing..."
 	go test ./...
-
-.PHONY: man
-## man: Build manpage
-man:
-	@echo "TODO"
 
 .PHONY: run
 ## run: Runs go run

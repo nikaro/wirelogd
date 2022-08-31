@@ -1,15 +1,17 @@
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
-exclude: "^vendor/"
+exclude: ^vendor/
 repos:
-  - repo: "https://github.com/pre-commit/pre-commit-hooks"
-    rev: "v4.3.0"
-    hooks:
-      - id: "trailing-whitespace"
-      - id: "end-of-file-fixer"
-      - id: "check-yaml"
-      - id: "check-added-large-files"
-  - repo: "https://github.com/golangci/golangci-lint"
-    rev: "v1.48.0"
-    hooks:
-      - id: "golangci-lint"
+- hooks:
+  - id: trailing-whitespace
+  - id: end-of-file-fixer
+  - id: check-yaml
+  - id: check-added-large-files
+  repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.3.0
+- hooks:
+  - id: golangci-lint
+  repo: https://github.com/golangci/golangci-lint
+  rev: v1.48.0
+- hooks:
+  - id: commitizen
+  repo: https://github.com/commitizen-tools/commitizen
+  rev: v2.32.2
