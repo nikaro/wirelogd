@@ -1,16 +1,19 @@
 # lo
 
 [![tag](https://img.shields.io/github/tag/samber/lo.svg)](https://github.com/samber/lo/releases)
+![Go Version](https://img.shields.io/badge/Go-%3E%3D%201.18-%23007d9c)
 [![GoDoc](https://godoc.org/github.com/samber/lo?status.svg)](https://pkg.go.dev/github.com/samber/lo)
 ![Build Status](https://github.com/samber/lo/actions/workflows/go.yml/badge.svg)
 [![Go report](https://goreportcard.com/badge/github.com/samber/lo)](https://goreportcard.com/report/github.com/samber/lo)
-[![codecov](https://codecov.io/gh/samber/lo/branch/master/graph/badge.svg)](https://codecov.io/gh/samber/lo)
+[![Coverage](https://img.shields.io/codecov/c/github/samber/lo)](https://codecov.io/gh/samber/lo)
+[![Contributors](https://img.shields.io/github/contributors/samber/lo)](https://github.com/samber/lo/graphs/contributors)
+[![License](https://img.shields.io/github/license/samber/lo)](./LICENSE)
 
 ✨ **`samber/lo` is a Lodash-style Go library based on Go 1.18+ Generics.**
 
 This project started as an experiment with the new generics implementation. It may look like [Lodash](https://github.com/lodash/lodash) in some aspects. I used to code with the fantastic ["go-funk"](https://github.com/thoas/go-funk) package, but "go-funk" uses reflection and therefore is not typesafe.
 
-As expected, benchmarks demonstrate that generics will be much faster than implementations based on the "reflect" package. Benchmarks also show similar performance gains compared to pure `for` loops. [See below](#-benchmark).
+As expected, benchmarks demonstrate that generics are much faster than implementations based on the "reflect" package. Benchmarks also show similar performance gains compared to pure `for` loops. [See below](#-benchmark).
 
 In the future, 5 to 10 helpers will overlap with those coming into the Go standard library (under package names `slices` and `maps`). I feel this library is legitimate and offers many more valuable abstractions.
 
@@ -22,6 +25,8 @@ In the future, 5 to 10 helpers will overlap with those coming into the Go standa
 **Why this name?**
 
 I wanted a **short name**, similar to "Lodash" and no Go package currently uses this name.
+
+![](img/logo-full.png)
 
 ## 🚀 Install
 
@@ -156,7 +161,8 @@ Supported helpers for channels:
 - [Generator](#generator)
 - [Batch](#batch)
 - [BatchWithTimeout](#batchwithtimeout)
-- [ChannelMerge](#channelmerge)
+- [FanIn](#fanin)
+- [FanOut](#fanout)
 
 Supported intersection helpers:
 
@@ -515,7 +521,7 @@ flat := lo.Flatten[int]([][]int{{0, 1}, {2, 3, 4, 5}})
 
 ### Interleave
 
-Round-robbin alternating input slices and sequentially appending value at index into result.
+Round-robin alternating input slices and sequentially appending value at index into result.
 
 ```go
 interleaved := lo.Interleave[int]([]int{1, 4, 7}, []int{2, 5, 8}, []int{3, 6, 9})
@@ -1530,16 +1536,28 @@ for i := range children {
 }
 ```
 
-### ChannelMerge
+### FanIn
 
-Collects messages from multiple input channels into a single buffered channel. Output messages has no priority.
+Merge messages from multiple input channels into a single buffered channel. Output messages has no priority. When all upstream channels reach EOF, downstream channel closes.
 
 ```go
 stream1 := make(chan int, 42)
 stream2 := make(chan int, 42)
 stream3 := make(chan int, 42)
 
-all := lo.ChannelMerge(100, stream1, stream2, stream3)
+all := lo.FanIn(100, stream1, stream2, stream3)
+// <-chan int
+```
+
+### FanOut
+
+Broadcasts all the upstream messages to multiple downstream channels. When upstream channel reach EOF, downstream channels close. If any downstream channels is full, broadcasting is paused.
+
+```go
+stream := make(chan int, 42)
+
+all := lo.FanOut(5, 100, stream)
+// [5]<-chan int
 ```
 
 ### Contains
@@ -1664,10 +1682,10 @@ left, right := lo.Difference[int]([]int{0, 1, 2, 3, 4, 5}, []int{0, 1, 2, 3, 4, 
 
 ### Union
 
-Returns all distinct elements from both collections. Result will not change the order of elements relatively.
+Returns all distinct elements from given collections. Result will not change the order of elements relatively.
 
 ```go
-union := lo.Union[int]([]int{0, 1, 2, 3, 4, 5}, []int{0, 2, 10})
+union := lo.Union[int]([]int{0, 1, 2, 3, 4, 5}, []int{0, 2}, []int{0, 10})
 // []int{0, 1, 2, 3, 4, 5, 10}
 ```
 
@@ -2683,9 +2701,9 @@ make test
 make watch-test
 ```
 
-## 👤 Authors
+## 👤 Contributors
 
-- Samuel Berthe
+![Contributors](https://contrib.rocks/image?repo=samber/lo)
 
 ## 💫 Show your support
 
