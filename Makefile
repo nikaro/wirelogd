@@ -7,6 +7,7 @@ MANDIR?=${_INSTDIR}/share/man
 
 GOOS?=$(shell go env GOOS)
 GOARCH?=$(shell go env GOARCH)
+GOPROXY?=direct
 
 .PHONY: all
 all: build
@@ -14,15 +15,15 @@ all: build
 .PHONY: setup
 ## setup: Setup go modules
 setup:
-	go get -u all
-	go mod tidy
-	go mod vendor
+	env GOPROXY=${GOPROXY} go get -u all
+	env GOPROXY=${GOPROXY} go mod tidy
+	env GOPROXY=${GOPROXY} go mod vendor
 
 .PHONY: build
 ## build: Build for the current target
 build:
 	@echo "Building..."
-	env CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -mod vendor -o build/${APP}-${GOOS}-${GOARCH} .
+	env CGO_ENABLED=0 GOPROXY=${GOPROXY} GOOS=${GOOS} GOARCH=${GOARCH} go build -mod vendor -o build/${APP}-${GOOS}-${GOARCH} .
 
 .PHONY: man
 ## man: Build manpage
@@ -76,7 +77,7 @@ uninstall:
 ## lint: Run linters
 lint:
 	@echo "Linting..."
-	golangci-lint run
+	env GOPROXY=${GOPROXY} golangci-lint run
 
 .PHONY: format
 ## format: Runs goimports on the project
