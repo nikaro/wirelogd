@@ -3,7 +3,7 @@ module github.com/nikaro/wirelogd
 go 1.18
 
 require (
-	github.com/rs/zerolog v1.28.0
+	github.com/rs/zerolog v1.29.0
 	github.com/samber/lo v1.37.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.15.0
