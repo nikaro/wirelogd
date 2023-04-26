@@ -99,7 +99,7 @@ func initConfig() {
 	}
 
 	// read config
-	if !lo.Contains([]string{"man", "completion"}, os.Args[1]) {
+	if len(os.Args) > 0 && !lo.Contains([]string{"man", "completion"}, os.Args[1]) {
 		if err := viper.ReadInConfig(); err != nil {
 			log.Warn().Err(err).Send()
 		}
@@ -114,7 +114,7 @@ func initConfig() {
 	}
 
 	// set global log level
-	logLevel := lo.Ternary[zerolog.Level](config.Debug, zerolog.DebugLevel, zerolog.InfoLevel)
+	logLevel := lo.Ternary(config.Debug, zerolog.DebugLevel, zerolog.InfoLevel)
 	zerolog.SetGlobalLevel(logLevel)
 }
 
