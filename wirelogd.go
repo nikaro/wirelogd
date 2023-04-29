@@ -99,7 +99,7 @@ func initConfig() {
 	}
 
 	// read config
-	if len(os.Args) > 0 && !lo.Contains([]string{"man", "completion"}, os.Args[1]) {
+	if len(os.Args) > 1 && !lo.Contains([]string{"man", "completion"}, os.Args[1]) {
 		if err := viper.ReadInConfig(); err != nil {
 			log.Warn().Err(err).Send()
 		}
