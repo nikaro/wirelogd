@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.3.2
+
+- [Improvement]: updated dependencies, test with Go 1.20.
+
 # v1.3.1
 
 - [Improvement]: bump package netlink to pull in big endian architecture fixes.
