@@ -7,7 +7,6 @@ before:
 builds:
   - env:
       - "CGO_ENABLED=0"
-      - "GOPROXY=direct"
     goos:
       - "linux"
     goarch:
