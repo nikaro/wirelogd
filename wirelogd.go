@@ -12,14 +12,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -44,7 +43,7 @@ type wirelogdPeer struct {
 func (p *wirelogdPeer) JSON() []byte {
 	pJSON, err := json.Marshal(p)
 	if err != nil {
-		log.Error().Err(err).Send()
+		slog.Error(err.Error())
 		os.Exit(1)
 	}
 
@@ -71,7 +70,7 @@ func init() {
 
 	// bind command flags
 	if err := viper.BindPFlags(rootCmd.Flags()); err != nil {
-		log.Error().Err(err).Send()
+		slog.Error(err.Error())
 	}
 }
 
@@ -85,7 +84,7 @@ func initConfig() {
 	viper.SetEnvPrefix("wirelogd")
 	viper.AutomaticEnv()
 	if err := viper.BindEnv("config"); err != nil {
-		log.Error().Err(err).Send()
+		slog.Error(err.Error())
 	}
 
 	// set config file path
@@ -101,7 +100,7 @@ func initConfig() {
 	// read config
 	if len(os.Args) > 1 && !lo.Contains([]string{"man", "completion"}, os.Args[1]) {
 		if err := viper.ReadInConfig(); err != nil {
-			log.Warn().Err(err).Send()
+			slog.Warn(err.Error())
 		}
 	}
 
@@ -114,21 +113,24 @@ func initConfig() {
 	}
 
 	// set global log level
-	logLevel := lo.Ternary(config.Debug, zerolog.DebugLevel, zerolog.InfoLevel)
-	zerolog.SetGlobalLevel(logLevel)
+	loggerOpts := &slog.HandlerOptions{
+		Level: lo.Ternary(config.Debug, slog.LevelDebug, slog.LevelInfo),
+	}
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, loggerOpts))
+	slog.SetDefault(logger)
 }
 
 func getPeers() []wirelogdPeer {
 	wg, err := wgctrl.New()
 	if err != nil {
-		log.Error().Err(err).Send()
+		slog.Error(err.Error())
 		os.Exit(1)
 	}
 	defer wg.Close()
 
 	wgDevices, err := wg.Devices()
 	if err != nil {
-		log.Error().Err(err).Send()
+		slog.Error(err.Error())
 		os.Exit(1)
 	}
 
@@ -166,16 +168,16 @@ func getPeers() []wirelogdPeer {
 
 func runLoop(cmd *cobra.Command, args []string) {
 	configJSON, _ := json.Marshal(config)
-	log.Debug().RawJSON("config", configJSON).Send()
+	slog.Debug("", slog.String("config", string(configJSON)))
 
-	log.Info().Msg("start wirelogd")
+	slog.Info("start wirelogd")
 
 	// catch sigterm signal
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		log.Info().Msg("stop wirelogd")
+		slog.Info("stop wirelogd")
 		os.Exit(0)
 	}()
 
@@ -185,7 +187,7 @@ func runLoop(cmd *cobra.Command, args []string) {
 	for {
 		wgPeers := getPeers()
 		peersJSON, _ := json.Marshal(wgPeers)
-		log.Debug().RawJSON("peers", peersJSON).Send()
+		slog.Debug("", slog.String("peers", string(peersJSON)))
 
 		now := time.Now().Unix()
 		for _, wgPeer := range wgPeers {
@@ -194,10 +196,10 @@ func runLoop(cmd *cobra.Command, args []string) {
 			timedOut := (now - wgPeer.LatestHandshake) > config.Timeout
 			if wasActive && timedOut {
 				activityState[wgKey] = false
-				log.Info().RawJSON("peer", wgPeer.JSON()).Str("state", "inactive").Send()
+				slog.Info("", slog.String("peer", string(wgPeer.JSON())), slog.String("state", "inactive"))
 			} else if !wasActive && !timedOut {
 				activityState[wgKey] = true
-				log.Info().RawJSON("peer", wgPeer.JSON()).Str("state", "active").Send()
+				slog.Info("", slog.String("peer", string(wgPeer.JSON())), slog.String("state", "active"))
 			}
 		}
 
@@ -208,7 +210,7 @@ func runLoop(cmd *cobra.Command, args []string) {
 
 func main() {
 	if err := rootCmd.Execute(); err != nil {
-		log.Error().Err(err).Send()
+		slog.Error(err.Error())
 		os.Exit(1)
 	}
 }
