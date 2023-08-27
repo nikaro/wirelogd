@@ -55,6 +55,60 @@ function __wirelogd_perform_completion
     printf "%s\n" "$directiveLine"
 end
 
+# this function limits calls to __wirelogd_perform_completion, by caching the result behind $__wirelogd_perform_completion_once_result
+function __wirelogd_perform_completion_once
+    __wirelogd_debug "Starting __wirelogd_perform_completion_once"
+
+    if test -n "$__wirelogd_perform_completion_once_result"
+        __wirelogd_debug "Seems like a valid result already exists, skipping __wirelogd_perform_completion"
+        return 0
+    end
+
+    set --global __wirelogd_perform_completion_once_result (__wirelogd_perform_completion)
+    if test -z "$__wirelogd_perform_completion_once_result"
+        __wirelogd_debug "No completions, probably due to a failure"
+        return 1
+    end
+
+    __wirelogd_debug "Performed completions and set __wirelogd_perform_completion_once_result"
+    return 0
+end
+
+# this function is used to clear the $__wirelogd_perform_completion_once_result variable after completions are run
+function __wirelogd_clear_perform_completion_once_result
+    __wirelogd_debug ""
+    __wirelogd_debug "========= clearing previously set __wirelogd_perform_completion_once_result variable =========="
+    set --erase __wirelogd_perform_completion_once_result
+    __wirelogd_debug "Succesfully erased the variable __wirelogd_perform_completion_once_result"
+end
+
+function __wirelogd_requires_order_preservation
+    __wirelogd_debug ""
+    __wirelogd_debug "========= checking if order preservation is required =========="
+
+    __wirelogd_perform_completion_once
+    if test -z "$__wirelogd_perform_completion_once_result"
+        __wirelogd_debug "Error determining if order preservation is required"
+        return 1
+    end
+
+    set -l directive (string sub --start 2 $__wirelogd_perform_completion_once_result[-1])
+    __wirelogd_debug "Directive is: $directive"
+
+    set -l shellCompDirectiveKeepOrder 32
+    set -l keeporder (math (math --scale 0 $directive / $shellCompDirectiveKeepOrder) % 2)
+    __wirelogd_debug "Keeporder is: $keeporder"
+
+    if test $keeporder -ne 0
+        __wirelogd_debug "This does require order preservation"
+        return 0
+    end
+
+    __wirelogd_debug "This doesn't require order preservation"
+    return 1
+end
+
+
 # This function does two things:
 # - Obtain the completions and store them in the global __wirelogd_comp_results
 # - Return false if file completion should be performed
@@ -65,17 +119,17 @@ function __wirelogd_prepare_completions
     # Start fresh
     set --erase __wirelogd_comp_results
 
-    set -l results (__wirelogd_perform_completion)
-    __wirelogd_debug "Completion results: $results"
+    __wirelogd_perform_completion_once
+    __wirelogd_debug "Completion results: $__wirelogd_perform_completion_once_result"
 
-    if test -z "$results"
+    if test -z "$__wirelogd_perform_completion_once_result"
         __wirelogd_debug "No completion, probably due to a failure"
         # Might as well do file completion, in case it helps
         return 1
     end
 
-    set -l directive (string sub --start 2 $results[-1])
-    set --global __wirelogd_comp_results $results[1..-2]
+    set -l directive (string sub --start 2 $__wirelogd_perform_completion_once_result[-1])
+    set --global __wirelogd_comp_results $__wirelogd_perform_completion_once_result[1..-2]
 
     __wirelogd_debug "Completions are: $__wirelogd_comp_results"
     __wirelogd_debug "Directive is: $directive"
@@ -171,6 +225,11 @@ end
 # Remove any pre-existing completions for the program since we will be handling all of them.
 complete -c wirelogd -e
 
+# this will get called after the two calls below and clear the $__wirelogd_perform_completion_once_result global
+complete -c wirelogd -n '__wirelogd_clear_perform_completion_once_result'
 # The call to __wirelogd_prepare_completions will setup __wirelogd_comp_results
 # which provides the program's completion choices.
-complete -c wirelogd -n '__wirelogd_prepare_completions' -f -a '$__wirelogd_comp_results'
+# If this doesn't require order preservation, we don't use the -k flag
+complete -c wirelogd -n 'not __wirelogd_requires_order_preservation && __wirelogd_prepare_completions' -f -a '$__wirelogd_comp_results'
+# otherwise we use the -k flag
+complete -k -c wirelogd -n '__wirelogd_requires_order_preservation && __wirelogd_prepare_completions' -f -a '$__wirelogd_comp_results'
