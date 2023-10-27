@@ -53,7 +53,7 @@ repos:
         files: ^\.goreleaser\.yml$
 
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.52.2
+    rev: v1.55.1
     hooks:
       - id: golangci-lint
 
