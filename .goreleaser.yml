@@ -1,8 +1,4 @@
----
-
-before:
-  hooks:
-    - "go mod tidy"
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 
 builds:
   - env:
@@ -12,16 +8,6 @@ builds:
     goarch:
       - "amd64"
       - "arm64"
-
-changelog:
-  filters:
-    exclude:
-      - "^dx:"
-      - "^build:"
-      - "^docs:"
-      - "^test:"
-      - "^ci:"
-      - "typo"
 
 nfpms:
   - package_name: "wirelogd"

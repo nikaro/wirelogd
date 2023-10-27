@@ -21,3 +21,6 @@ dist/
 
 # Secrets
 config.toml
+
+# Artifacts
+_changelog.md

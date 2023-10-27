@@ -1,0 +1,72 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - .github/**
+      - .cz.toml
+      - .gitignore
+      - .goreleaser.yml
+      - .pre-commit-config.yaml
+      - .yamllint.yml
+      - CHANGELOG.md
+  workflow_dispatch:
+
+env:
+  # renovate: datasource=pypi depName=commitizen
+  COMMITIZEN_VERSION: 3.12.0
+
+jobs:
+  release:
+    name: Release
+    if: "!startsWith(github.event.head_commit.message, 'bump:')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Check if version bumped
+        id: latest-tag
+        run: echo "tag=$(git describe --abbrev=0)" >> "$GITHUB_OUTPUT"
+
+      - name: Dry run
+        uses: commitizen-tools/commitizen-action@bc2616fec6b3effc9ad20380f19550a8b18cdbdf # 0.20.0
+        with:
+          github_token: ${{ github.token }}
+          changelog_increment_filename: _changelog.md
+          commitizen_version: ${{ env.COMMITIZEN_VERSION }}
+          dry_run: true
+
+      - name: Bump
+        uses: commitizen-tools/commitizen-action@bc2616fec6b3effc9ad20380f19550a8b18cdbdf # 0.20.0
+        with:
+          github_token: ${{ github.token }}
+          changelog_increment_filename: _changelog.md
+          commitizen_version: ${{ env.COMMITIZEN_VERSION }}
+
+      - name: Check if version bumped
+        id: check-tag
+        run: |
+          [ "${{ steps.latest-tag.outputs.tag }}" != "${{ env.REVISION }}" ] && bump=true
+          echo "bump=$bump" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Go
+        if: steps.check-tag.outputs.bump == 'true'
+        uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
+        with:
+          cache: true
+          check-latest: true
+          go-version-file: go.mod
+
+      - name: Run GoReleaser
+        if: steps.check-tag.outputs.bump == 'true'
+        uses: goreleaser/goreleaser-action@7ec5c2b0c6cdda6e8bbb49444bc797dd33d74dd8 # v5.0.0
+        with:
+          args: release --clean --release-notes _changelog.md
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
