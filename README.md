@@ -1,10 +1,5 @@
 # Wirelogd
 
-> :warning: Wirelogd has been rewritten in Go, you can still found the old
-> Python version in `python` branch.
->
-> [More information...](https://github.com/nikaro/wirelogd/wiki/Rewrite-in-Go)
-
 Wirelogd is a logging daemon for WireGuard. Since WireGuard itself does not log
 the state of its peers (and since it is UDP based so there is no concept of
 "connection state"), Wirelogd relies on the latest handshake to determine if a
