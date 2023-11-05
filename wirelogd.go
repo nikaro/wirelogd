@@ -16,10 +16,10 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"slices"
 	"syscall"
 	"time"
 
-	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.zx2c4.com/wireguard/wgctrl"
@@ -98,7 +98,7 @@ func initConfig() {
 	}
 
 	// read config
-	if len(os.Args) > 1 && !lo.Contains([]string{"man", "completion"}, os.Args[1]) {
+	if len(os.Args) > 1 && !slices.Contains([]string{"man", "completion"}, os.Args[1]) {
 		if err := viper.ReadInConfig(); err != nil {
 			slog.Warn(err.Error())
 		}
@@ -114,7 +114,13 @@ func initConfig() {
 
 	// set global log level
 	loggerOpts := &slog.HandlerOptions{
-		Level: lo.Ternary(config.Debug, slog.LevelDebug, slog.LevelInfo),
+		Level: func() slog.Level {
+			if config.Debug {
+				return slog.LevelDebug
+			} else {
+				return slog.LevelInfo
+			}
+		}(),
 	}
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, loggerOpts))
 	slog.SetDefault(logger)
