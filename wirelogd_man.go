@@ -1,9 +1,9 @@
 package main
 
 import (
+	"log/slog"
 	"os"
 
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 )
@@ -21,7 +21,7 @@ var man = &cobra.Command{
 		header := &doc.GenManHeader{}
 		err := doc.GenMan(rootCmd, header, os.Stdout)
 		if err != nil {
-			log.Error().Err(err).Send()
+			slog.Error(err.Error())
 			os.Exit(1)
 		}
 	},
