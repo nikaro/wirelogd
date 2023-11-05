@@ -1,3 +1,9 @@
+## 1.1.2 (2023-11-05)
+
+### Fix
+
+- remove forgotten usage of zerolog
+
 ## 1.1.1 (2023-10-27)
 
 ### Fix
