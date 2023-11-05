@@ -1,3 +1,9 @@
+## 1.1.3 (2023-11-05)
+
+### Refactor
+
+- remove samber/lo dependency
+
 ## 1.1.2 (2023-11-05)
 
 ### Fix
