@@ -30,7 +30,7 @@ repos:
       - id: check-renovate
 
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.32.0
+    rev: v1.33.0
     hooks:
       - id: yamllint
 
@@ -47,7 +47,7 @@ repos:
       - id: goreleaser-check
         name: goreleaser-check
         # renovate: datasource=docker depName=goreleaser/goreleaser
-        entry: goreleaser/goreleaser:v1.21.2
+        entry: goreleaser/goreleaser:v1.22.1
         args: [check]
         language: docker_image
         files: ^\.goreleaser\.yml$
