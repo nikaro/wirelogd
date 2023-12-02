@@ -1,3 +1,9 @@
+## 1.1.5 (2023-12-02)
+
+### Fix
+
+- show all peer IP addresses instead of the first one (#71)
+
 ## 1.1.4 (2023-11-06)
 
 ### Fix
