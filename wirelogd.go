@@ -33,11 +33,11 @@ type wirelogdConfig struct {
 }
 
 type wirelogdPeer struct {
-	Interface       string `json:"interface"`
-	PublicKey       string `json:"public_key"`
-	Endpoint        string `json:"endpoint"`
-	AllowedIPs      string `json:"allowed_ips"`
-	LatestHandshake int64  `json:"-"`
+	Interface       string   `json:"interface"`
+	PublicKey       string   `json:"public_key"`
+	Endpoint        string   `json:"endpoint"`
+	AllowedIPs      []string `json:"allowed_ips"`
+	LatestHandshake int64    `json:"-"`
 }
 
 func (p *wirelogdPeer) JSON() []byte {
@@ -151,12 +151,10 @@ func getPeers() []wirelogdPeer {
 				endpoint = "(none)"
 			}
 
-			// replace empty allowed ips
-			var allowedIPs string
-			if len(wgPeer.AllowedIPs) > 0 {
-				allowedIPs = wgPeer.AllowedIPs[0].IP.String()
-			} else {
-				allowedIPs = "(none)"
+			// get list of allowed ip addresses
+			var allowedIPs []string
+			for _, allowedIp := range wgPeer.AllowedIPs {
+				allowedIPs = append(allowedIPs, allowedIp.IP.String())
 			}
 
 			wgPeers = append(wgPeers, wirelogdPeer{
