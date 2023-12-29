@@ -11,25 +11,22 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log/slog"
 	"net"
 	"os"
 	"os/signal"
-	"slices"
 	"syscall"
 	"time"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"golang.zx2c4.com/wireguard/wgctrl"
 )
 
 type wirelogdConfig struct {
-	ConfigFile string `json:"config_file"`
-	Debug      bool   `json:"debug"`
-	Refresh    int    `json:"refresh"`
-	Timeout    int64  `json:"timeout"`
+	Debug   bool  `json:"debug"`
+	Refresh int   `json:"refresh"`
+	Timeout int64 `json:"timeout"`
 }
 
 type wirelogdPeer struct {
@@ -40,6 +37,58 @@ type wirelogdPeer struct {
 	LatestHandshake int64    `json:"-"`
 }
 
+var configFile string
+var config wirelogdConfig
+var logLevel *slog.LevelVar
+
+func init() {
+	// Configure logging
+	logLevel = &slog.LevelVar{}
+	logLevel.Set(slog.LevelInfo)
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel}))
+	slog.SetDefault(logger)
+
+	// Set default values
+	config = wirelogdConfig{
+		Debug:   false,
+		Refresh: 5,
+		Timeout: 300,
+	}
+
+	// Parse flags
+	var configFromArgs wirelogdConfig
+	flag.StringVar(&configFile, "config", "/etc/wirelogd/config.json", "path to configuration file")
+	flag.BoolVar(&configFromArgs.Debug, "debug", false, "enable debug logging")
+	flag.IntVar(&configFromArgs.Refresh, "refresh", 0, "refresh interval in seconds")
+	flag.Int64Var(&configFromArgs.Timeout, "timeout", 0, "wireguard handshake timeout in seconds")
+	flag.Parse()
+
+	// Read config file
+	if data, errRead := os.ReadFile(configFile); errRead == nil {
+		if errParse := json.Unmarshal(data, &config); errParse != nil {
+			slog.Warn(fmt.Sprintf("cannot parse configuration file: %s", errParse.Error()))
+		}
+	} else {
+		slog.Warn(fmt.Sprintf("cannot read configuration file: %s", errRead.Error()))
+	}
+
+	// Apply config from flags
+	if isFlagPassed("debug") {
+		config.Debug = configFromArgs.Debug
+	}
+	if isFlagPassed("refresh") {
+		config.Refresh = configFromArgs.Refresh
+	}
+	if isFlagPassed("timeout") {
+		config.Timeout = configFromArgs.Timeout
+	}
+
+	// Set log level
+	if config.Debug {
+		logLevel.Set(slog.LevelDebug)
+	}
+}
+
 func (p *wirelogdPeer) JSON() []byte {
 	pJSON, err := json.Marshal(p)
 	if err != nil {
@@ -48,82 +97,6 @@ func (p *wirelogdPeer) JSON() []byte {
 	}
 
 	return pJSON
-}
-
-var rootCmd = &cobra.Command{
-	Use:               "wirelogd",
-	Short:             "Wirelogd is a logging daemon for WireGuard.",
-	Long:              ``,
-	Run:               runLoop,
-	DisableAutoGenTag: true,
-}
-var config *wirelogdConfig
-
-func init() {
-	cobra.OnInitialize(initConfig)
-
-	// set command flags
-	rootCmd.Flags().StringP("config", "c", "", "path to configuration file")
-	rootCmd.Flags().BoolP("debug", "d", false, "enable debug logging")
-	rootCmd.Flags().IntP("refresh", "r", 0, "refresh interval in seconds")
-	rootCmd.Flags().IntP("timeout", "t", 0, "wireguard handshake timeout in seconds")
-
-	// bind command flags
-	if err := viper.BindPFlags(rootCmd.Flags()); err != nil {
-		slog.Error(err.Error())
-	}
-}
-
-func initConfig() {
-	// set defaults
-	viper.SetDefault("debug", false)
-	viper.SetDefault("refresh", 5)
-	viper.SetDefault("timeout", 300)
-
-	// bind environment variables
-	viper.SetEnvPrefix("wirelogd")
-	viper.AutomaticEnv()
-	if err := viper.BindEnv("config"); err != nil {
-		slog.Error(err.Error())
-	}
-
-	// set config file path
-	if rootCmd.Flag("config").Value.String() != "" {
-		viper.SetConfigFile(rootCmd.Flag("config").Value.String())
-	} else if viper.GetString("config") != "" {
-		viper.SetConfigFile(viper.GetString("config"))
-	} else {
-		viper.SetConfigName("config")
-		viper.AddConfigPath("/etc/wirelogd")
-	}
-
-	// read config
-	if len(os.Args) > 1 && !slices.Contains([]string{"man", "completion"}, os.Args[1]) {
-		if err := viper.ReadInConfig(); err != nil {
-			slog.Warn(err.Error())
-		}
-	}
-
-	// set global config
-	config = &wirelogdConfig{
-		ConfigFile: viper.ConfigFileUsed(),
-		Debug:      viper.GetBool("debug"),
-		Refresh:    viper.GetInt("refresh"),
-		Timeout:    viper.GetInt64("timeout"),
-	}
-
-	// set global log level
-	loggerOpts := &slog.HandlerOptions{
-		Level: func() slog.Level {
-			if config.Debug {
-				return slog.LevelDebug
-			} else {
-				return slog.LevelInfo
-			}
-		}(),
-	}
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, loggerOpts))
-	slog.SetDefault(logger)
 }
 
 func getPeers() []wirelogdPeer {
@@ -170,9 +143,11 @@ func getPeers() []wirelogdPeer {
 	return wgPeers
 }
 
-func runLoop(cmd *cobra.Command, args []string) {
-	configJSON, _ := json.Marshal(config)
-	slog.Debug("", slog.String("config", string(configJSON)))
+func main() {
+	if logLevel.Level() == slog.LevelDebug {
+		configJSON, _ := json.Marshal(config)
+		slog.Debug("", slog.String("config", string(configJSON)))
+	}
 
 	slog.Info("start wirelogd")
 
@@ -209,12 +184,5 @@ func runLoop(cmd *cobra.Command, args []string) {
 
 		// wait
 		time.Sleep(time.Duration(config.Refresh) * time.Second)
-	}
-}
-
-func main() {
-	if err := rootCmd.Execute(); err != nil {
-		slog.Error(err.Error())
-		os.Exit(1)
 	}
 }

@@ -22,16 +22,10 @@ nfpms:
     contents:
       - src: "contrib/wirelogd.service"
         dst: "/lib/systemd/system/wirelogd.service"
-      - src: "contrib/config.toml"
-        dst: "/etc/wirelogd/config.toml"
+      - src: "contrib/config.json"
+        dst: "/etc/wirelogd/config.json"
       - src: "man/wirelogd.1"
         dst: "/usr/share/man/man1/wirelogd.1"
-      - src: "completions/wirelogd.bash"
-        dst: "/usr/share/bash-completion/completions/wirelogd"
-      - src: "completions/wirelogd.fish"
-        dst: "/usr/share/fish/vendor_completions.d/wirelogd.fish"
-      - src: "completions/wirelogd.zsh"
-        dst: "/usr/share/zsh/site-functions/_wirelogd"
       - src: "LICENSE"
         dst: "/usr/share/licenses/wirelogd/LICENSE"
     scripts:
