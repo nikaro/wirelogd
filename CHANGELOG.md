@@ -1,3 +1,9 @@
+## 2.0.0 (2023-12-29)
+
+### Refactor
+
+- remove cobra and viper dependencies
+
 ## 1.1.7 (2023-12-25)
 
 ### Fix
