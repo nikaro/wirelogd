@@ -165,8 +165,11 @@ func main() {
 
 	for {
 		wgPeers := getPeers()
-		peersJSON, _ := json.Marshal(wgPeers)
-		slog.Debug("", slog.String("peers", string(peersJSON)))
+
+		if logLevel.Level() == slog.LevelDebug {
+			peersJSON, _ := json.Marshal(wgPeers)
+			slog.Debug("", slog.String("peers", string(peersJSON)))
+		}
 
 		now := time.Now().Unix()
 		for _, wgPeer := range wgPeers {
