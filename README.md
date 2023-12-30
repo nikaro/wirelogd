@@ -26,11 +26,11 @@ Usage:
   wirelogd [flags]
 
 Flags:
-  -c, --config string   path to configuration file
-  -d, --debug           enable debug logging
-  -h, --help            help for wirelogd
-  -r, --refresh int     refresh interval in seconds
-  -t, --timeout int     wireguard handshake timeout in seconds
+  --config string   path to configuration file
+  --debug           enable debug logging
+  --help            help for wirelogd
+  --refresh int     refresh interval in seconds
+  --timeout int     wireguard handshake timeout in seconds
 ```
 
 ## Installation
@@ -47,7 +47,7 @@ $ cd <dest-path>
 $ make
 $ sudo make PREFIX=/usr install
 $ sudo mkdir -p /etc/wirelogd
-$ sudo cp /usr/share/wirelogd/config.toml /etc/wirelogd
+$ sudo cp /usr/share/wirelogd/config.json /etc/wirelogd
 $ sudo cp /usr/share/wirelogd/wirelogd.service /etc/systemd/system/
 $ sudo useradd --home-dir /var/run/wirelogd --shell /usr/sbin/nologin --system --user-group wirelogd
 $ sudo setfacl -m u:wirelogd:rX,g:wirelogd:rX /etc/wireguard
@@ -58,30 +58,23 @@ $ sudo systemctl enable --now wirelogd.service
 ## Configuration
 
 By default Wirelogd will look for its configuration in
-`/etc/wirelogd/config.toml`, you can override this by using `--config/-c`
-command-line argument or by specifying a `WIRELOGD_CONFIG` variable in your
-environment. Wirelogd will fallback on its hard-coded defaults if no
+`/etc/wirelogd/config.json`, you can override this by using `--config`
+command-line argument. Wirelogd will fallback on its hard-coded defaults if no
 configuration is specified.
 
 Here is an exemple configuration file, with the default values:
 
-```toml
-debug = false
-refresh = 5
-timeout = 300
+```json
+{
+  "debug": false,
+  "refresh": 5,
+  "timeout": 300
+}
 ```
-
-Here are the environment variables available:
-
-- `WIRELOGD_CONFIG`
-- `WIRELOGD_DEBUG`
-- `WIRELOGD_REFRESH`
-- `WIRELOGD_TIMEOUT`
 
 Configuration precedence is, by lowest (most easily overridden) to highest
 (overrides all others):
 
 - hard-coded defaults
-- `/etc/wirelogd/config.toml` or given configuration file (by env or args)
-- environment variables
+- `/etc/wirelogd/config.json` or given configuration file
 - command-line arguments
