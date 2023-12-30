@@ -42,16 +42,6 @@ repos:
           - json
           - yaml
 
-  - repo: local
-    hooks:
-      - id: goreleaser-check
-        name: goreleaser-check
-        # renovate: datasource=docker depName=goreleaser/goreleaser
-        entry: goreleaser/goreleaser:v1.22.1
-        args: [check]
-        language: docker_image
-        files: ^\.goreleaser\.yml$
-
   - repo: https://github.com/golangci/golangci-lint
     rev: v1.55.2
     hooks:

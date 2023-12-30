@@ -24,30 +24,13 @@ build:
 	@echo "Building..."
 	env CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -mod vendor -o build/${APP}-${GOOS}-${GOARCH} .
 
-.PHONY: man
-## man: Build manpage
-man:
-	@echo "Building manpage..."
-	build/${APP}-${GOOS}-${GOARCH} man > man/${APP}.1
-
-.PHONY: completion
-## man: Build completions
-completion:
-	@echo "Building completions..."
-	build/${APP}-${GOOS}-${GOARCH} completion bash > completions/${APP}.bash
-	build/${APP}-${GOOS}-${GOARCH} completion fish > completions/${APP}.fish
-	build/${APP}-${GOOS}-${GOARCH} completion zsh > completions/${APP}.zsh
-
 .PHONY: install
 ## install: Install the application
 install:
 	@echo "Installing..."
 	install -Dm755 build/${APP}-${GOOS}-${GOARCH} ${BINDIR}/${APP}
 	install -Dm644 man/${APP}.1 ${MANDIR}/man1/${APP}.1
-	install -Dm644 completions/${APP}.bash ${SHAREDIR}/../bash-completion/completions/${APP}
-	install -Dm644 completions/${APP}.fish ${SHAREDIR}/../fish/vendor_completions.d/${APP}.fish
-	install -Dm644 completions/${APP}.zsh ${SHAREDIR}/../zsh/site-functions/_${APP}
-	install -Dm644 contrib/config.toml ${SHAREDIR}/config.toml
+	install -Dm644 contrib/config.json ${SHAREDIR}/config.json
 	install -Dm644 contrib/${APP}.service ${SHAREDIR}/${APP}.service
 	sed -i'' -e 's,/usr,${PREFIX},g' ${SHAREDIR}/${APP}.service
 
@@ -58,25 +41,18 @@ uninstall:
 	rm -f ${BINDIR}/${APP}
 	rm -f ${MANDIR}/man1/${APP}.1
 	rm -f ${SHAREDIR}/*
-	rm -f ${SHAREDIR}/../bash-completion/completions/${APP}
-	rm -f ${SHAREDIR}/../fish/vendor_completions.d/${APP}.fish
-	rm -f ${SHAREDIR}/../zsh/site-functions/_${APP}
 	rmdir --ignore-fail-on-non-empty ${BINDIR}
 	rmdir --ignore-fail-on-non-empty ${SHAREDIR}
 	rmdir --ignore-fail-on-non-empty ${MANDIR}/man1
 	rmdir --ignore-fail-on-non-empty ${MANDIR}
-	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../bash-completion/completions
-	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../bash-completion
-	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../fish/vendor_completions.d
-	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../fish
-	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../zsh/site-functions
-	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../zsh
 
 .PHONY: lint
 ## lint: Run linters
 lint:
 	@echo "Linting..."
-	env GOPROXY=${GOPROXY} golangci-lint run
+	go vet ./...
+	go fix ./...
+	staticcheck ./...
 
 .PHONY: format
 ## format: Runs goimports on the project
