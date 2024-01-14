@@ -1,3 +1,13 @@
+## 2.1.0 (2024-01-14)
+
+### Feat
+
+- add logging format and destination customization
+
+### Fix
+
+- panic on init failure
+
 ## 2.0.1 (2023-12-30)
 
 ### Perf
