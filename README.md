@@ -59,10 +59,7 @@ $ sudo systemctl enable --now wirelogd.service
 
 ## Configuration
 
-By default Wirelogd will look for its configuration in
-`/etc/wirelogd/config.json`, you can override this by using `--config`
-command-line argument. Wirelogd will fallback on its hard-coded defaults if no
-configuration is specified.
+Wirelogd can take a JSON configuration file via the `-config` command-line flag.
 
 Here is an exemple configuration file, with the default values:
 
@@ -80,5 +77,5 @@ Configuration precedence is, by lowest (most easily overridden) to highest
 (overrides all others):
 
 - hard-coded defaults
-- `/etc/wirelogd/config.json` or given configuration file
+- configuration file
 - command-line arguments

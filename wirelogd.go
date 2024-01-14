@@ -56,7 +56,7 @@ func init() {
 
 	// Parse flags
 	var configFromArgs wirelogdConfig
-	flag.StringVar(&configFile, "config", "/etc/wirelogd/config.json", "path to configuration file")
+	flag.StringVar(&configFile, "config", "", "path to JSON configuration file")
 	flag.StringVar(&configFromArgs.LogDestination, "log-destination", "stdout", "logging destination, could be \"stdout\", \"syslog\" or a file path")
 	flag.StringVar(&configFromArgs.LogFormat, "log-format", "json", "logging format, could be \"json\" or \"text\"")
 	flag.BoolVar(&configFromArgs.Debug, "debug", false, "enable debug logging")
@@ -65,12 +65,14 @@ func init() {
 	flag.Parse()
 
 	// Read config file
-	if data, errRead := os.ReadFile(configFile); errRead == nil {
-		if errParse := json.Unmarshal(data, &config); errParse != nil {
-			slog.Warn(fmt.Sprintf("cannot parse configuration file: %s", errParse.Error()))
+	if configFile != "" {
+		if data, errRead := os.ReadFile(configFile); errRead == nil {
+			if errParse := json.Unmarshal(data, &config); errParse != nil {
+				panic(fmt.Sprintf("cannot parse configuration file: %s", errParse.Error()))
+			}
+		} else {
+			panic(fmt.Sprintf("cannot read configuration file: %s", errRead.Error()))
 		}
-	} else {
-		slog.Warn(fmt.Sprintf("cannot read configuration file: %s", errRead.Error()))
 	}
 
 	// Apply config from flags
@@ -110,15 +112,13 @@ func init() {
 		if syslogWriter, syslogErr := syslog.New(syslogPriority, "wirelogd"); syslogErr == nil {
 			logWriter = syslogWriter
 		} else {
-			slog.Error(syslogErr.Error())
-			os.Exit(1)
+			panic(syslogErr.Error())
 		}
 	default:
 		if logFile, logFileErr := os.OpenFile(config.LogDestination, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); logFileErr == nil {
 			logWriter = logFile
 		} else {
-			slog.Error(logFileErr.Error())
-			os.Exit(1)
+			panic(logFileErr.Error())
 		}
 	}
 	// Configure logging format
@@ -129,8 +129,7 @@ func init() {
 	case "text":
 		logHandler = slog.NewTextHandler(logWriter, logHandlerOptions)
 	default:
-		slog.Error("unsupported log format")
-		os.Exit(1)
+		panic("unsupported log format")
 	}
 	// Configure logger
 	logger := slog.New(logHandler)

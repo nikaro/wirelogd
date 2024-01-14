@@ -8,7 +8,7 @@ User=wirelogd
 Group=wirelogd
 CapabilityBoundingSet=CAP_NET_ADMIN
 AmbientCapabilities=CAP_NET_ADMIN
-ExecStart=/usr/bin/wirelogd
+ExecStart=/usr/bin/wirelogd -config /etc/wirelogd/config.json
 Restart=on-failure
 
 [Install]
