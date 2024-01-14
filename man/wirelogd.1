@@ -18,21 +18,29 @@ Wirelogd is a logging daemon for WireGuard.
 
 .SH OPTIONS
 .PP
-\fB--config\fP=""
-	path to configuration file
+\fB-config\fP=""
+	path to JSON configuration file
 
 .PP
-\fB--debug\fP[=false]
+\fB-debug\fP[=false]
 	enable debug logging
 
 .PP
-\fB--help\fP[=false]
+\fB-log-destination\fP=""
+	logging destination, could be "stdout", "syslog" or a file path (default "stdout")
+
+.PP
+\fB-log-format\fP=""
+	logging format, could be "json" or "text" (default "json")
+
+.PP
+\fB-help\fP[=false]
 	help for wirelogd
 
 .PP
-\fB--refresh\fP=0
+\fB-refresh\fP=0
 	refresh interval in seconds
 
 .PP
-\fB--timeout\fP=0
+\fB-timeout\fP=0
 	wireguard handshake timeout in seconds

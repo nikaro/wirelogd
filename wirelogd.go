@@ -13,7 +13,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log/slog"
+	"log/syslog"
 	"net"
 	"os"
 	"os/signal"
@@ -24,9 +26,11 @@ import (
 )
 
 type wirelogdConfig struct {
-	Debug   bool  `json:"debug"`
-	Refresh int   `json:"refresh"`
-	Timeout int64 `json:"timeout"`
+	Debug          bool   `json:"debug"`
+	LogDestination string `json:"log_destination"`
+	LogFormat      string `json:"log_format"`
+	Refresh        int    `json:"refresh"`
+	Timeout        int64  `json:"timeout"`
 }
 
 type wirelogdPeer struct {
@@ -39,25 +43,22 @@ type wirelogdPeer struct {
 
 var configFile string
 var config wirelogdConfig
-var logLevel *slog.LevelVar
 
 func init() {
-	// Configure logging
-	logLevel = &slog.LevelVar{}
-	logLevel.Set(slog.LevelInfo)
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel}))
-	slog.SetDefault(logger)
-
 	// Set default values
 	config = wirelogdConfig{
-		Debug:   false,
-		Refresh: 5,
-		Timeout: 300,
+		Debug:          false,
+		LogDestination: "stdout",
+		LogFormat:      "json",
+		Refresh:        5,
+		Timeout:        300,
 	}
 
 	// Parse flags
 	var configFromArgs wirelogdConfig
 	flag.StringVar(&configFile, "config", "/etc/wirelogd/config.json", "path to configuration file")
+	flag.StringVar(&configFromArgs.LogDestination, "log-destination", "stdout", "logging destination, could be \"stdout\", \"syslog\" or a file path")
+	flag.StringVar(&configFromArgs.LogFormat, "log-format", "json", "logging format, could be \"json\" or \"text\"")
 	flag.BoolVar(&configFromArgs.Debug, "debug", false, "enable debug logging")
 	flag.IntVar(&configFromArgs.Refresh, "refresh", 0, "refresh interval in seconds")
 	flag.Int64Var(&configFromArgs.Timeout, "timeout", 0, "wireguard handshake timeout in seconds")
@@ -76,6 +77,12 @@ func init() {
 	if isFlagPassed("debug") {
 		config.Debug = configFromArgs.Debug
 	}
+	if isFlagPassed("log-destination") {
+		config.LogDestination = configFromArgs.LogDestination
+	}
+	if isFlagPassed("log-format") {
+		config.LogFormat = configFromArgs.LogFormat
+	}
 	if isFlagPassed("refresh") {
 		config.Refresh = configFromArgs.Refresh
 	}
@@ -83,10 +90,51 @@ func init() {
 		config.Timeout = configFromArgs.Timeout
 	}
 
-	// Set log level
-	if config.Debug {
-		logLevel.Set(slog.LevelDebug)
+	// Configure logging level
+	logHandlerOptions := &slog.HandlerOptions{
+		Level: slog.LevelInfo,
 	}
+	if config.Debug {
+		logHandlerOptions.Level = slog.LevelDebug
+	}
+	// Configure logging destination
+	var logWriter io.Writer
+	switch config.LogDestination {
+	case "stdout":
+		logWriter = os.Stdout
+	case "syslog":
+		syslogPriority := syslog.LOG_INFO
+		if config.Debug {
+			syslogPriority = syslog.LOG_DEBUG
+		}
+		if syslogWriter, syslogErr := syslog.New(syslogPriority, "wirelogd"); syslogErr == nil {
+			logWriter = syslogWriter
+		} else {
+			slog.Error(syslogErr.Error())
+			os.Exit(1)
+		}
+	default:
+		if logFile, logFileErr := os.OpenFile(config.LogDestination, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); logFileErr == nil {
+			logWriter = logFile
+		} else {
+			slog.Error(logFileErr.Error())
+			os.Exit(1)
+		}
+	}
+	// Configure logging format
+	var logHandler slog.Handler
+	switch config.LogFormat {
+	case "json":
+		logHandler = slog.NewJSONHandler(logWriter, logHandlerOptions)
+	case "text":
+		logHandler = slog.NewTextHandler(logWriter, logHandlerOptions)
+	default:
+		slog.Error("unsupported log format")
+		os.Exit(1)
+	}
+	// Configure logger
+	logger := slog.New(logHandler)
+	slog.SetDefault(logger)
 }
 
 func (p *wirelogdPeer) JSON() []byte {
@@ -144,10 +192,8 @@ func getPeers() []wirelogdPeer {
 }
 
 func main() {
-	if logLevel.Level() == slog.LevelDebug {
-		configJSON, _ := json.Marshal(config)
-		slog.Debug("", slog.String("config", string(configJSON)))
-	}
+	configJSON, _ := json.Marshal(config)
+	slog.Debug("", slog.String("config", string(configJSON)))
 
 	slog.Info("start wirelogd")
 
@@ -166,10 +212,8 @@ func main() {
 	for {
 		wgPeers := getPeers()
 
-		if logLevel.Level() == slog.LevelDebug {
-			peersJSON, _ := json.Marshal(wgPeers)
-			slog.Debug("", slog.String("peers", string(peersJSON)))
-		}
+		peersJSON, _ := json.Marshal(wgPeers)
+		slog.Debug("", slog.String("peers", string(peersJSON)))
 
 		now := time.Now().Unix()
 		for _, wgPeer := range wgPeers {

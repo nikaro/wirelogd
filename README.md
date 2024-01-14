@@ -20,17 +20,19 @@ juin 12 15:19:37 hostname wirelogd[15233]: {"level":"info","peer":{"interface":"
 
 ```
 # wirelogd -h
-Wirelogd is a logging daemon for WireGuard.
-
-Usage:
-  wirelogd [flags]
-
-Flags:
-  --config string   path to configuration file
-  --debug           enable debug logging
-  --help            help for wirelogd
-  --refresh int     refresh interval in seconds
-  --timeout int     wireguard handshake timeout in seconds
+Usage of ./build/wirelogd-darwin-arm64:
+  -config string
+        path to JSON configuration file
+  -debug
+        enable debug logging
+  -log-destination string
+        logging destination, could be "stdout", "syslog" or a file path (default "stdout")
+  -log-format string
+        logging format, could be "json" or "text" (default "json")
+  -refresh int
+        refresh interval in seconds
+  -timeout int
+        wireguard handshake timeout in seconds
 ```
 
 ## Installation
@@ -67,6 +69,8 @@ Here is an exemple configuration file, with the default values:
 ```json
 {
   "debug": false,
+  "log_destination": "stdout",
+  "log_format": "json",
   "refresh": 5,
   "timeout": 300
 }
