@@ -24,7 +24,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Run pre-commit
-        uses: nikaro/actions/pre-commit@b4cdd885a190e1f4eb7f4de3f8ee0f5668cc5d9a # 1.3.11
+        uses: nikaro/actions/pre-commit@e279a865c36407ae0b95bcce39e8449084736092 # 1.3.13
 
       - run: go vet ./...
       - run: go fix ./...
