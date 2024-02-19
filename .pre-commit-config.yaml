@@ -30,7 +30,7 @@ repos:
       - id: check-renovate
 
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.34.0
+    rev: v1.35.1
     hooks:
       - id: yamllint
 
@@ -43,11 +43,11 @@ repos:
           - yaml
 
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.56.1
+    rev: v1.56.2
     hooks:
       - id: golangci-lint
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.14.1
+    rev: v3.15.0
     hooks:
       - id: commitizen
