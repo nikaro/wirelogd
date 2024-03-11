@@ -15,7 +15,7 @@ on:
 
 env:
   # renovate: datasource=pypi depName=commitizen
-  COMMITIZEN_VERSION: 3.16.0
+  COMMITIZEN_VERSION: 3.18.0
 
 jobs:
   ci:
@@ -40,7 +40,7 @@ jobs:
         run: echo "tag=$(git describe --abbrev=0)" >> "$GITHUB_OUTPUT"
 
       - name: Dry run
-        uses: commitizen-tools/commitizen-action@bc2616fec6b3effc9ad20380f19550a8b18cdbdf # 0.20.0
+        uses: commitizen-tools/commitizen-action@1f11eb222996406681d2bfa1eb3d997eca46557c # 0.21.0
         with:
           github_token: ${{ github.token }}
           changelog_increment_filename: _changelog.md
@@ -48,7 +48,7 @@ jobs:
           dry_run: true
 
       - name: Bump
-        uses: commitizen-tools/commitizen-action@bc2616fec6b3effc9ad20380f19550a8b18cdbdf # 0.20.0
+        uses: commitizen-tools/commitizen-action@1f11eb222996406681d2bfa1eb3d997eca46557c # 0.21.0
         with:
           github_token: ${{ github.token }}
           changelog_increment_filename: _changelog.md
