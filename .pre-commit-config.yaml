@@ -48,6 +48,6 @@ repos:
       - id: golangci-lint
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.18.1
+    rev: v3.18.4
     hooks:
       - id: commitizen
