@@ -43,11 +43,11 @@ repos:
           - yaml
 
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.57.2
+    rev: v1.58.0
     hooks:
       - id: golangci-lint
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.24.0
+    rev: v3.25.0
     hooks:
       - id: commitizen
