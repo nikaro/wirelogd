@@ -23,7 +23,7 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.28.2
+    rev: 0.28.3
     hooks:
       - id: check-github-actions
       - id: check-github-workflows
@@ -43,7 +43,7 @@ repos:
           - yaml
 
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.58.0
+    rev: v1.58.1
     hooks:
       - id: golangci-lint
 
