@@ -1,0 +1,10 @@
+{
+  "name": "wirelogd",
+  "image": "ghcr.io/nikaro/debian-devcontainer:latest",
+  "features": {
+    "ghcr.io/nikaro/features/base": {},
+    "ghcr.io/nikaro/features/actionlint": {},
+    "ghcr.io/nikaro/features/go-devtools": {},
+    "ghcr.io/nikaro/features/pre-commit": {}
+  }
+}
