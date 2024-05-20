@@ -1,21 +1,9 @@
 name: CD
 
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - .github/**
-      - .cz.toml
-      - .gitignore
-      - .goreleaser.yml
-      - .pre-commit-config.yaml
-      - .yamllint.yml
-      - CHANGELOG.md
+  schedule:
+    - cron: "0 0 * * 3"
   workflow_dispatch:
-
-env:
-  # renovate: datasource=pypi depName=commitizen
-  COMMITIZEN_VERSION: 3.26.0
 
 jobs:
   ci:
@@ -25,7 +13,6 @@ jobs:
 
   release:
     name: Release
-    if: "!startsWith(github.event.head_commit.message, 'bump:')"
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -44,20 +31,19 @@ jobs:
         with:
           github_token: ${{ github.token }}
           changelog_increment_filename: _changelog.md
-          commitizen_version: ${{ env.COMMITIZEN_VERSION }}
           dry_run: true
 
       - name: Bump
+        id: cz
         uses: commitizen-tools/commitizen-action@1f11eb222996406681d2bfa1eb3d997eca46557c # 0.21.0
         with:
           github_token: ${{ github.token }}
           changelog_increment_filename: _changelog.md
-          commitizen_version: ${{ env.COMMITIZEN_VERSION }}
 
       - name: Check if version bumped
         id: check-tag
         run: |
-          [ "${{ steps.latest-tag.outputs.tag }}" != "${{ env.REVISION }}" ] && bump=true
+          [ "${{ steps.latest-tag.outputs.tag }}" != "${{ steps.cz.outputs.version }}" ] && bump=true
           echo "bump=$bump" >> "$GITHUB_OUTPUT"
 
       - name: Setup Go
