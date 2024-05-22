@@ -24,7 +24,7 @@ jobs:
 
       - name: Check if version bumped
         id: latest-tag
-        run: echo "tag=$(git describe --abbrev=0)" >> "$GITHUB_OUTPUT"
+        run: echo "tag=$(git describe --tags --abbrev=0)" >> "$GITHUB_OUTPUT"
 
       - name: Dry run
         uses: commitizen-tools/commitizen-action@1f11eb222996406681d2bfa1eb3d997eca46557c # 0.21.0
