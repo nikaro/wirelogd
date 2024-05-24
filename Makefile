@@ -22,7 +22,7 @@ setup:
 ## build: Build for the current target
 build:
 	@echo "Building..."
-	env CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -mod vendor -o build/${APP}-${GOOS}-${GOARCH} .
+	env CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -o build/${APP}-${GOOS}-${GOARCH} .
 
 .PHONY: install
 ## install: Install the application
@@ -58,7 +58,7 @@ lint:
 ## format: Runs goimports on the project
 format:
 	@echo "Formatting..."
-	fd -t file -e go -E vendor/ | xargs goimports -l -w
+	go fmt ./...
 
 .PHONY: test
 ## test: Runs go test

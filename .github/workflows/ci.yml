@@ -1,3 +1,4 @@
+---
 name: CI
 
 on:
@@ -49,7 +50,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Build
-        run: go build -v -mod vendor .
+        run: go build -v .
 
   test:
     name: Test

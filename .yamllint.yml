@@ -1,5 +1,7 @@
+---
 extends: default
 
 rules:
-  line-length:
-    level: warning
+  comments:
+    min-spaces-from-content: 1
+  line-length: disable
