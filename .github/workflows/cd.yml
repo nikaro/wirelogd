@@ -5,6 +5,11 @@ on:
   schedule:
     - cron: "0 0 * * 3"
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: Confirm
+        type: boolean
+        required: true
 
 jobs:
   ci:
@@ -36,6 +41,7 @@ jobs:
           dry_run: true
 
       - name: Bump
+        if: github.event_name == 'pull_request' && inputs.confirm
         id: cz
         uses: commitizen-tools/commitizen-action@1f11eb222996406681d2bfa1eb3d997eca46557c # 0.21.0
         with:
@@ -43,13 +49,14 @@ jobs:
           changelog_increment_filename: _changelog.md
 
       - name: Check if version bumped
+        if: steps.cz.outputs.version
         id: check-tag
         run: |
-          [ "${{ steps.latest-tag.outputs.tag }}" != "${{ steps.cz.outputs.version }}" ] && bump=true
-          echo "bump=$bump" >> "$GITHUB_OUTPUT"
+          [ "${{ steps.latest-tag.outputs.tag }}" != "${{ steps.cz.outputs.version }}" ] && \
+            echo bump=true >> "$GITHUB_OUTPUT"
 
       - name: Setup Go
-        if: steps.check-tag.outputs.bump == 'true'
+        if: steps.check-tag.outputs.bump
         uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7 # v5.0.1
         with:
           cache: true
@@ -57,7 +64,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Run GoReleaser
-        if: steps.check-tag.outputs.bump == 'true'
+        if: steps.check-tag.outputs.bump
         uses: goreleaser/goreleaser-action@5742e2a039330cbb23ebf35f046f814d4c6ff811 # v5.1.0
         with:
           args: release --clean --release-notes _changelog.md
