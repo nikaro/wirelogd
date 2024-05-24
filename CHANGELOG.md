@@ -1,3 +1,9 @@
+## v2.1.1 (2024-05-24)
+
+### Fix
+
+- **deps**: update all and not vendor deps anymore
+
 ## 2.1.0 (2024-01-14)
 
 ### Feat
