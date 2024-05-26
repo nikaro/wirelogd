@@ -43,6 +43,8 @@ type wirelogdPeer struct {
 
 var configFile string
 var config wirelogdConfig
+var version string
+var showVersion bool
 
 func init() {
 	// Set default values
@@ -62,6 +64,7 @@ func init() {
 	flag.BoolVar(&configFromArgs.Debug, "debug", false, "enable debug logging")
 	flag.IntVar(&configFromArgs.Refresh, "refresh", 0, "refresh interval in seconds")
 	flag.Int64Var(&configFromArgs.Timeout, "timeout", 0, "wireguard handshake timeout in seconds")
+	flag.BoolVar(&showVersion, "version", false, "show version")
 	flag.Parse()
 
 	// Read config file
@@ -193,6 +196,11 @@ func getPeers() []wirelogdPeer {
 func main() {
 	configJSON, _ := json.Marshal(config)
 	slog.Debug("", slog.String("config", string(configJSON)))
+
+	if showVersion {
+		fmt.Printf("wirelogd version %s\n", version)
+		os.Exit(0)
+	}
 
 	slog.Info("start wirelogd")
 

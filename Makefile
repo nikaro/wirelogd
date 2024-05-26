@@ -7,6 +7,7 @@ MANDIR?=${_INSTDIR}/share/man
 
 GOOS?=$(shell go env GOOS)
 GOARCH?=$(shell go env GOARCH)
+VERSION = $(shell git describe --always --dirty)
 
 .PHONY: all
 all: build
@@ -22,7 +23,7 @@ setup:
 ## build: Build for the current target
 build:
 	@echo "Building..."
-	env CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -o build/${APP}-${GOOS}-${GOARCH} .
+	env CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -ldflags="-s -w -X 'main.version=${VERSION}'" -o build/${APP}-${GOOS}-${GOARCH} .
 
 .PHONY: install
 ## install: Install the application
