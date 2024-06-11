@@ -26,6 +26,8 @@ jobs:
 
       - name: Run pre-commit
         uses: nikaro/actions/pre-commit@778344cb9ff71fc2237011ac731622e1da3a109a # 1.6.4
+        with:
+          python-version: 3.x
 
       - run: go vet ./...
       - run: go fix ./...
