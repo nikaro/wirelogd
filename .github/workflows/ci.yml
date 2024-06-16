@@ -24,18 +24,23 @@ jobs:
           check-latest: true
           go-version-file: go.mod
 
-      - name: Run pre-commit
-        uses: nikaro/actions/pre-commit@778344cb9ff71fc2237011ac731622e1da3a109a # 1.6.4
-        with:
-          python-version: 3.x
-
-      - run: go vet ./...
-      - run: go fix ./...
-
       - name: Run staticcheck
         uses: dominikh/staticcheck-action@fe1dd0c3658873b46f8c9bb3291096a617310ca6 # v1.3.1
         with:
           install-go: false
+
+      - name: Run govulncheck
+        uses: golang/govulncheck-action@dd0578b371c987f96d1185abb54344b44352bd58 # v1.0.3
+        with:
+          go-version-file: go.mod
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@a4f60bb28d35aeee14e6880718e0c85ff1882e64 # v6.0.1
+
+      - name: Run pre-commit
+        uses: nikaro/actions/pre-commit@778344cb9ff71fc2237011ac731622e1da3a109a # 1.6.4
+        with:
+          python-version: 3.x
 
   build:
     name: Build

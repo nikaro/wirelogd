@@ -17,7 +17,6 @@ all: build
 setup:
 	go get -u all
 	go mod tidy
-	go mod vendor
 
 .PHONY: build
 ## build: Build for the current target
@@ -54,6 +53,9 @@ lint:
 	go vet ./...
 	go fix ./...
 	staticcheck ./...
+	govulncheck ./...
+	golangci-lint run
+
 
 .PHONY: format
 ## format: Runs goimports on the project

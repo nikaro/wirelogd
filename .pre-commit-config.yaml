@@ -1,5 +1,5 @@
+---
 default_install_hook_types: [pre-commit, commit-msg]
-exclude: ^vendor/
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -42,10 +42,24 @@ repos:
           - json
           - yaml
 
+  - repo: local
+    hooks:
+      - id: make-format
+        name: make format
+        language: system
+        types: [go]
+        entry: make format
+      - id: make-lint
+        name: make lint
+        language: system
+        types: [go]
+        entry: make lint
+
   - repo: https://github.com/golangci/golangci-lint
     rev: v1.59.1
     hooks:
-      - id: golangci-lint
+      - id: golangci-lint-config-verify
+      - id: golangci-lint-full
 
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v3.27.0
