@@ -9,15 +9,13 @@ on:
 jobs:
   ci:
     name: CI
-    if: "!startsWith(github.event.head_commit.message, 'bump:')"
     uses: ./.github/workflows/ci.yml
     secrets: inherit
 
   release:
     name: Release
-    if: "!startsWith(github.event.head_commit.message, 'bump:')"
     needs: [ci]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     permissions:
       contents: write
     steps:
@@ -25,10 +23,6 @@ jobs:
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           fetch-depth: 0
-
-      - name: Check if version bumped
-        id: latest-tag
-        run: echo "tag=$(git describe --tags --abbrev=0)" >> "$GITHUB_OUTPUT"
 
       - name: Dry run
         uses: commitizen-tools/commitizen-action@1f11eb222996406681d2bfa1eb3d997eca46557c # 0.21.0
@@ -38,21 +32,14 @@ jobs:
           dry_run: true
 
       - name: Bump
-        id: cz
+        if: env.PREVIOUS_REVISION != env.REVISION
         uses: commitizen-tools/commitizen-action@1f11eb222996406681d2bfa1eb3d997eca46557c # 0.21.0
         with:
           github_token: ${{ github.token }}
           changelog_increment_filename: _changelog.md
 
-      - name: Check if version bumped
-        if: steps.cz.outputs.version
-        id: check-tag
-        run: |
-          [ "${{ steps.latest-tag.outputs.tag }}" != "${{ steps.cz.outputs.version }}" ] && \
-            echo bump=true >> "$GITHUB_OUTPUT"
-
       - name: Setup Go
-        if: steps.check-tag.outputs.bump
+        if: env.PREVIOUS_REVISION != env.REVISION
         uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7 # v5.0.1
         with:
           cache: true
@@ -60,7 +47,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Run GoReleaser
-        if: steps.check-tag.outputs.bump
+        if: env.PREVIOUS_REVISION != env.REVISION
         uses: goreleaser/goreleaser-action@286f3b13b1b49da4ac219696163fb8c1c93e1200 # v6.0.0
         with:
           args: release --clean --release-notes _changelog.md
