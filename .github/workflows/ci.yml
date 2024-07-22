@@ -38,7 +38,7 @@ jobs:
         uses: golangci/golangci-lint-action@a4f60bb28d35aeee14e6880718e0c85ff1882e64 # v6.0.1
 
       - name: Run pre-commit
-        uses: nikaro/actions/pre-commit@09f4303c25301bd9306525d3989a9f0ed938ad2f # 1.6.6
+        uses: nikaro/actions/pre-commit@ed5ef534b365f534b5b3907122ff707cb36a3503 # 1.6.7
         with:
           python-version: 3.x
 
