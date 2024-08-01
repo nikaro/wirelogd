@@ -35,10 +35,10 @@ jobs:
           go-version-file: go.mod
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@a4f60bb28d35aeee14e6880718e0c85ff1882e64 # v6.0.1
+        uses: golangci/golangci-lint-action@aaa42aa0628b4ae2578232a66b541047968fac86 # v6.1.0
 
       - name: Run pre-commit
-        uses: nikaro/actions/pre-commit@ed5ef534b365f534b5b3907122ff707cb36a3503 # 1.6.7
+        uses: nikaro/actions/pre-commit@865a24d94f9ec89514bd8e043d2d13b8461cb20b # 1.6.8
         with:
           python-version: 3.x
 
