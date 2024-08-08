@@ -2,7 +2,7 @@ module github.com/nikaro/wirelogd
 
 go 1.22
 
-toolchain go1.22.5
+toolchain go1.22.6
 
 require golang.zx2c4.com/wireguard/wgctrl v0.0.0-20230429144221-925a1e7659e6
 
