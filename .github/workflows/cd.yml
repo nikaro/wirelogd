@@ -1,10 +1,12 @@
----
 name: CD
 
 on:
   schedule:
     - cron: "0 0 * * 3"
   workflow_dispatch:
+
+env:
+  TASK_X_REMOTE_TASKFILES: 1
 
 jobs:
   ci:
@@ -15,41 +17,44 @@ jobs:
   release:
     name: Release
     needs: [ci]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-        with:
-          fetch-depth: 0
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |-
+          gh repo clone ${{ github.repository }} ${{ github.workspace }} -- --branch "$BRANCH"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
 
-      - name: Dry run
-        uses: commitizen-tools/commitizen-action@1f11eb222996406681d2bfa1eb3d997eca46557c # 0.21.0
-        with:
-          github_token: ${{ github.token }}
-          changelog_increment_filename: _changelog.md
-          dry_run: true
+      - name: Install tools
+        run: |
+          echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
+          /home/linuxbrew/.linuxbrew/bin/brew install \
+            commitizen \
+            go \
+            go-task \
+            goreleaser \
 
       - name: Bump
-        if: env.PREVIOUS_REVISION != env.REVISION
-        uses: commitizen-tools/commitizen-action@1f11eb222996406681d2bfa1eb3d997eca46557c # 0.21.0
-        with:
-          github_token: ${{ github.token }}
-          changelog_increment_filename: _changelog.md
+        run: |-
+          echo "PREVIOUS_REVISION=$(cz version --project)" >>"$GITHUB_ENV"
+          task go:bump --yes
+          echo "REVISION=$(cz version --project)" >>"$GITHUB_ENV"
 
-      - name: Setup Go
+      - name: Push tags
         if: env.PREVIOUS_REVISION != env.REVISION
-        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
-        with:
-          cache: true
-          check-latest: true
-          go-version-file: go.mod
-
-      - name: Run GoReleaser
-        if: env.PREVIOUS_REVISION != env.REVISION
-        uses: goreleaser/goreleaser-action@286f3b13b1b49da4ac219696163fb8c1c93e1200 # v6.0.0
-        with:
-          args: release --clean --release-notes _changelog.md
         env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          REMOTE_REPO: https://${{ github.actor }}:${{ github.token }}@github.com/${{ github.repository }}.git
+        run: git push "$REMOTE_REPO" "HEAD:${BRANCH}" --tags
+
+      - name: Release
+        if: env.PREVIOUS_REVISION != env.REVISION
+        env:
+          AUR_KEY: ${{ secrets.AUR_KEY }}
           GITHUB_TOKEN: ${{ github.token }}
+        run: task go:release --yes

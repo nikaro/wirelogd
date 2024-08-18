@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+
+echo Running pre-commit hook
+
+# Run pre-commit, this checks if we changed any files and runs the checks.
+FILES=$(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g')
+if [ -n "$FILES" ]; then
+  if ! task lint --yes >/dev/null 2>&1; then
+    echo "Error running make lint - please fix before committing"
+    echo "if this is a mistake you can skip the checks with 'git commit --no-verify'"
+    exit 1
+  fi
+fi
+
+exit 0

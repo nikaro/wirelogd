@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+
+echo Running commit-msg hook
+
+if ! command -v cz >/dev/null 2>&1; then
+  echo "commitizen could not be found - please install it commiting"
+  exit 1
+fi
+
+cz check --allow-abort --commit-msg-file "$1"

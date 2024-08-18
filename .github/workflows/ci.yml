@@ -1,13 +1,18 @@
----
 name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_call:
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+env:
+  TASK_X_REMOTE_TASKFILES: 1
 
 jobs:
   lint:
@@ -15,63 +20,69 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: gh repo clone ${{ github.repository }} ${{ github.workspace }} -- --depth=1 --branch "$BRANCH"
 
-      - name: Setup Go
-        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
-        with:
-          cache: true
-          check-latest: true
-          go-version-file: go.mod
+      - name: Install tools
+        run: |
+          echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
+          /home/linuxbrew/.linuxbrew/bin/brew install \
+            actionlint \
+            check-jsonschema \
+            fd \
+            go \
+            go-task \
+            golangci-lint \
+            govulncheck \
+            jq \
+            prettier \
+            shellcheck \
+            staticcheck \
+            shfmt \
+            yamlfmt \
+            yamllint \
 
-      - name: Run staticcheck
-        uses: dominikh/staticcheck-action@fe1dd0c3658873b46f8c9bb3291096a617310ca6 # v1.3.1
-        with:
-          install-go: false
-
-      - name: Run govulncheck
-        uses: golang/govulncheck-action@dd0578b371c987f96d1185abb54344b44352bd58 # v1.0.3
-        with:
-          go-version-file: go.mod
-
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@aaa42aa0628b4ae2578232a66b541047968fac86 # v6.1.0
-
-      - name: Run pre-commit
-        uses: nikaro/actions/pre-commit@cecb5d4e1f07cde50d8c5738e4a1c60c4938fc9f # 1.6.10
-        with:
-          python-version: 3.x
+      - name: Lint
+        run: task lint --yes
 
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: gh repo clone ${{ github.repository }} ${{ github.workspace }} -- --depth=1 --branch "$BRANCH"
 
-      - name: Setup Go
-        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
-        with:
-          cache: true
-          check-latest: true
-          go-version-file: go.mod
+      - name: Install tools
+        run: |
+          echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
+          /home/linuxbrew/.linuxbrew/bin/brew install \
+            go \
+            go-task \
 
       - name: Build
-        run: go build -v .
+        run: task go:build --yes
 
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: gh repo clone ${{ github.repository }} ${{ github.workspace }} -- --depth=1 --branch "$BRANCH"
 
-      - name: Setup Go
-        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
-        with:
-          cache: true
-          check-latest: true
-          go-version-file: go.mod
+      - name: Install tools
+        run: |
+          echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
+          /home/linuxbrew/.linuxbrew/bin/brew install \
+            go \
+            go-task \
 
       - name: Test
-        run: go test -v ./...
+        run: task go:test --yes
