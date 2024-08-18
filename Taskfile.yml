@@ -11,7 +11,7 @@ includes:
     taskfile: https://github.com/nikaro/meta/raw/main/taskfiles/format.yml
     internal: true
   go:
-    taskfile: https://github.com/nikaro/meta/raw/go-tasks/taskfiles/go.yml
+    taskfile: https://github.com/nikaro/meta/raw/main/taskfiles/go.yml
     vars:
       BUILD_TARGETS:
         - linux/amd64
