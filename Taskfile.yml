@@ -58,6 +58,7 @@ tasks:
   release:
     desc: Publish release
     preconditions:
+      - test -n "$AUR_KEY"
       - test -n "$GITHUB_TOKEN"
     cmds:
       - goreleaser release --clean --release-notes ./_changelog.md
