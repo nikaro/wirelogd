@@ -42,7 +42,7 @@ jobs:
       - name: Bump
         run: |-
           echo "PREVIOUS_REVISION=$(cz version --project)" >>"$GITHUB_ENV"
-          task go:bump --yes
+          task bump --yes
           echo "REVISION=$(cz version --project)" >>"$GITHUB_ENV"
 
       - name: Push tags
@@ -57,4 +57,4 @@ jobs:
         env:
           AUR_KEY: ${{ secrets.AUR_KEY }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: task go:release --yes
+        run: task release --yes
