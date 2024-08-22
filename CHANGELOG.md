@@ -1,3 +1,10 @@
+## v2.1.4 (2024-08-22)
+
+### Fix
+
+- **deps**: update go to 1.23 and deps to their latest
+- **deps**: update dependency go to v1.22.6 (#128)
+
 ## v2.1.3 (2024-07-03)
 
 ### Fix
