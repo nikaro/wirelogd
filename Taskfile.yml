@@ -52,8 +52,8 @@ tasks:
   bump:
     desc: Bump version
     preconditions:
-      - cz --no-raise 21 bump --dry-run --changelog --changelog-to-stdout > ./_changelog.md
-    cmd: cz --no-raise 21 bump --changelog --changelog-to-stdout > ./_changelog.md
+      - cz --no-raise 3,21 bump --dry-run --changelog --changelog-to-stdout > ./_changelog.md
+    cmd: cz --no-raise 3,21 bump --changelog --changelog-to-stdout > ./_changelog.md
 
   release:
     desc: Publish release
