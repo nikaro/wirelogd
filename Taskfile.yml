@@ -1,17 +1,17 @@
-version: '3'
+version: "3"
 
 set: [errexit, nounset, pipefail]
 shopt: [globstar]
 
 includes:
   lint:
-    taskfile: https://github.com/nikaro/meta/raw/main/taskfiles/lint.yml
+    taskfile: https://github.com/nikaro/meta/raw/tasks-v1/taskfiles/lint.yml
     internal: true
   format:
-    taskfile: https://github.com/nikaro/meta/raw/main/taskfiles/format.yml
+    taskfile: https://github.com/nikaro/meta/raw/tasks-v1/taskfiles/format.yml
     internal: true
   go:
-    taskfile: https://github.com/nikaro/meta/raw/main/taskfiles/go.yml
+    taskfile: https://github.com/nikaro/meta/raw/tasks-v1/taskfiles/go.yml
     vars:
       BUILD_TARGETS:
         - linux/amd64
@@ -66,7 +66,7 @@ tasks:
 
   install:
     desc: Install the application
-    deps: ['go:build']
+    deps: ["go:build"]
     cmds:
       - install -Dm755 ./build/${APP}-${GOOS}-${GOARCH} ${BINDIR}/${APP}
       - install -Dm644 ./man/${APP}.1 ${MANDIR}/man1/${APP}.1
