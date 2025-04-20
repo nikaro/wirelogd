@@ -1,7 +1,0 @@
-{
-  "debug": false,
-  "log_destination": "stdout",
-  "log_format": "json",
-  "refresh": 5,
-  "timeout": 300
-}
