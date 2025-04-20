@@ -1,4 +1,4 @@
-module github.com/nikaro/wirelogd
+module git.sr.ht/~nka/wirelogd
 
 go 1.23.0
 

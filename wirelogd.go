@@ -155,7 +155,11 @@ func getPeers() []wirelogdPeer {
 		slog.Error(err.Error())
 		os.Exit(1)
 	}
-	defer wg.Close()
+	defer func() {
+		if err := wg.Close(); err != nil {
+			slog.Error(err.Error())
+		}
+	}()
 
 	wgDevices, err := wg.Devices()
 	if err != nil {

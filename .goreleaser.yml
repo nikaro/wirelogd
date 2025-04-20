@@ -12,7 +12,7 @@ builds:
 
 nfpms:
   - package_name: "wirelogd"
-    homepage: "https://github.con/nikaro/wirelogd"
+    homepage: "https://git.sr.ht/~nka/wirelogd"
     description: "Wirelogd is a logging daemon for WireGuard."
     maintainer: "Nicolas Karolak <nicolas@karolak.fr>"
     license: "GPLv3"

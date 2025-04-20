@@ -37,20 +37,16 @@ Usage of ./build/wirelogd-darwin-arm64:
 
 ## Installation
 
-### Packages
-
-You can find pre-compiled packages on the [Releases](https://github.com/nikaro/wirelogd/releases) page.
-
 ### Sources
 
 ```
 $ git clone <repo-url> <dest-path>
 $ cd <dest-path>
 $ make
-$ sudo make PREFIX=/usr install
+$ sudo task install
 $ sudo mkdir -p /etc/wirelogd
-$ sudo cp /usr/share/wirelogd/config.json /etc/wirelogd
-$ sudo cp /usr/share/wirelogd/wirelogd.service /etc/systemd/system/
+$ sudo cp /usr/local/share/wirelogd/config.json /etc/wirelogd
+$ sudo cp /usr/local/share/wirelogd/wirelogd.service /etc/systemd/system/
 $ sudo useradd --home-dir /var/run/wirelogd --shell /usr/sbin/nologin --system --user-group wirelogd
 $ sudo setfacl -m u:wirelogd:rX,g:wirelogd:rX /etc/wireguard
 $ sudo systemctl daemon-reload
