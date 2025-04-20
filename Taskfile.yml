@@ -3,22 +3,6 @@ version: "3"
 set: [errexit, nounset, pipefail]
 shopt: [globstar]
 
-includes:
-  lint:
-    taskfile: https://github.com/nikaro/meta/raw/tasks-v1/taskfiles/lint.yml
-    internal: true
-  format:
-    taskfile: https://github.com/nikaro/meta/raw/tasks-v1/taskfiles/format.yml
-    internal: true
-  go:
-    taskfile: https://github.com/nikaro/meta/raw/tasks-v1/taskfiles/go.yml
-    vars:
-      BUILD_TARGETS:
-        - linux/amd64
-        - linux/arm64
-        - darwin/amd64
-        - darwin/arm64
-
 env:
   APP: wirelogd
   PREFIX:
@@ -29,6 +13,18 @@ env:
     sh: echo ${MANDIR:-${PREFIX:-/usr/local}/share/man}
   SHAREDIR:
     sh: echo ${SHAREDIR:-${PREFIX:-/usr/local}/share/${APP:-wirelogd}}
+  CGO_ENABLED: 0
+  GOARCH:
+    sh: go env GOARCH
+  GOOS:
+    sh: go env GOOS
+  VERSION:
+    sh: git describe --always --dirty
+  BUILD_TARGETS:
+    - linux/amd64
+    - linux/arm64
+    - darwin/amd64
+    - darwin/arm64
 
 tasks:
   init:
@@ -38,16 +34,26 @@ tasks:
       - git config commit.template .gitmessage
 
   lint:
-    desc: Run linters
+    desc: Lint Go files
+    sources:
+      - ./**/*.go
+      - ./go.mod
+      - ./go.sum
     cmds:
-      - task: lint:default
-      - task: go:lint
+      - test -z $(goimports -l .)
+      - go vet ./...
+      - go fix ./...
+      - staticcheck ./...
+      - govulncheck ./...
+      - golangci-lint run
 
   format:
-    desc: Run formatters
-    cmds:
-      - task: format:default
-      - task: go:format
+    desc: Format Go files
+    sources:
+      - ./**/*.go
+      - ./go.mod
+      - ./go.sum
+    cmd: goimports -w -l .
 
   bump:
     desc: Bump version
@@ -57,12 +63,50 @@ tasks:
 
   release:
     desc: Publish release
-    preconditions:
-      - test -n "$AUR_KEY"
-      - test -n "$GITHUB_TOKEN"
     cmds:
       - goreleaser release --clean --release-notes ./_changelog.md
       - defer: rm -rf _changelog.md
+
+  test:
+    desc: Run tests
+    cmd: go test ./...
+
+  update:
+    desc: Update dependencies
+    cmds:
+      - go get -u all
+      - go mod tidy
+
+  build:
+    desc: Build application
+    sources:
+      - ./**/*.go
+      - ./go.mod
+      - ./go.sum
+    cmd: >-
+      go build \
+        -ldflags="-s -w -X 'main.version=${VERSION}'" \
+        -o ./build/${APP}-${GOOS}-${GOARCH} \
+        .
+
+  build:all:
+    desc: Build for all targets
+    cmds:
+      - for:
+          var: BUILD_TARGETS
+        cmd: >-
+          export GOOS=$(echo {{.ITEM}} | cut -d/ -f1) ;
+          export GOARCH=$(echo {{.ITEM}} | cut -d/ -f2) ;
+          go build \
+            -ldflags="-s -w -X 'main.version=${VERSION}'" \
+            -o ./build/${APP}-${GOOS}-${GOARCH} \
+            . ;
+
+  clean:
+    desc: Cleanup build files
+    cmds:
+      - rm -rf ./build/
+      - rm -rf ./dist/
 
   install:
     desc: Install the application
